@@ -1,11 +1,26 @@
-const dotenv = require('dotenv');
+const { Pool } = require("pg");
+require("dotenv").config();
 
-dotenv.config();
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+});
+
+const connectDB = async () => {
+  try {
+    await pool.query("SELECT NOW()");
+    console.log("✅ PostgreSQL Connected Successfully");
+  } catch (error) {
+    console.error("❌ Database Connection Failed");
+    console.error(error.message);
+    process.exit(1);
+  }
+};
 
 module.exports = {
-  database: process.env.DB_NAME || 'sb_sales_intelligence',
-  username: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  host: process.env.DB_HOST || 'localhost',
-  dialect: process.env.DB_DIALECT || 'mysql'
+  pool,
+  connectDB,
 };
