@@ -6,7 +6,61 @@ body {
   margin: 0;
   font-family: Arial, sans-serif;
   background: #0f172a;
-  color: #ffffff;
+  color: white;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #020617, #1e3a8a);
+}
+
+.login-card {
+  width: 380px;
+  background: #111827;
+  border: 1px solid #1e293b;
+  border-radius: 18px;
+  padding: 35px;
+  text-align: center;
+}
+
+.login-card h1 {
+  color: #38bdf8;
+  margin-bottom: 8px;
+}
+
+.login-card p {
+  color: #cbd5e1;
+  margin-bottom: 25px;
+}
+
+.login-card input,
+.login-card select {
+  width: 100%;
+  padding: 13px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: white;
+}
+
+.login-card small {
+  display: block;
+  margin-top: 18px;
+  color: #94a3b8;
+}
+
+button {
+  background: #38bdf8;
+  border: none;
+  color: #020617;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .app {
@@ -73,16 +127,6 @@ body {
   color: #cbd5e1;
 }
 
-button {
-  background: #38bdf8;
-  border: none;
-  color: #020617;
-  padding: 12px 18px;
-  border-radius: 10px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -108,18 +152,14 @@ button {
   font-size: 30px;
 }
 
-.upload-box {
-  border: 2px dashed #38bdf8;
-  border-radius: 14px;
-  padding: 35px;
-  text-align: center;
-  color: #cbd5e1;
-}
-
 .panel {
   margin-top: 25px;
 }
 
-li {
-  margin: 10px 0;
+.login-card h1 {
+  font-size: 42px;
+  line-height: 1.1;
+  white-space: nowrap;
+  letter-spacing: -1px;
+  margin: 0 0 12px;
 }

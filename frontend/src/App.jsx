@@ -1,31 +1,64 @@
+import { useState } from "react";
 import "./App.css";
 
+const roleMenus = {
+  "Business Owner": ["Dashboard", "Sales Upload", "Inventory", "Reports", "Forecast", "Logout"],
+  "Store Manager": ["Dashboard", "Sales Upload", "Inventory", "Reports", "Logout"],
+  "Sales Executive": ["Dashboard", "Sales Upload", "My Sales", "Logout"],
+  "System Administrator": ["Dashboard", "Users", "Roles", "Reports", "Settings", "Logout"],
+};
+
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState("Business Owner");
+
+  if (!isLoggedIn) {
+    return (
+      <div className="login-page">
+        <div className="login-card">
+          <h1>MarketMind AI</h1>
+          <p>Small Business Sales Intelligence Platform</p>
+
+          <input type="email" placeholder="Enter email" />
+          <input type="password" placeholder="Enter password" />
+
+          <select value={role} onChange={(e) => setRole(e.target.value)}>
+            <option>Business Owner</option>
+            <option>Store Manager</option>
+            <option>Sales Executive</option>
+            <option>System Administrator</option>
+          </select>
+
+          <button onClick={() => setIsLoggedIn(true)}>Login</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <aside className="sidebar">
         <h2>MarketMind AI</h2>
-        <p>Frontend Module</p>
+        <p>{role}</p>
 
         <nav>
-          <a className="active">Dashboard</a>
-          <a>Sales Upload</a>
-          <a>Inventory</a>
-          <a>Reports</a>
-          <a>Logout</a>
+          {roleMenus[role].map((item, index) => (
+            <a key={index} className={index === 0 ? "active" : ""}>
+              {item}
+            </a>
+          ))}
         </nav>
       </aside>
 
       <main className="main">
         <section className="hero">
           <div>
-            <h1>Small Business Sales Intelligence Platform</h1>
+            <h1>Welcome, {role}</h1>
             <p>
-              Sales dashboard, CSV upload interface, and role-based navigation
-              for small business sales intelligence.
+              Role-based navigation is active. Menu items change based on the selected user role.
             </p>
           </div>
-          <button>Business Owner</button>
+          <button onClick={() => setIsLoggedIn(false)}>Logout</button>
         </section>
 
         <section className="cards">
@@ -49,11 +82,11 @@ function App() {
         </section>
 
         <section className="panel">
-          <h2>Sales CSV Upload</h2>
-          <div className="upload-box">
-            <p>Drag and drop sales CSV file here</p>
-            <button>Choose File</button>
-          </div>
+          <h2>Day 2 Frontend Work</h2>
+          <p>
+            Login page UI and role-based navigation shell completed using React state.
+            Backend authentication API will be connected in upcoming integration.
+          </p>
         </section>
       </main>
     </div>
