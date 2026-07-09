@@ -1,0 +1,49 @@
+.dashboard {
+  padding:30px;
+}
+
+
+.dashboard h1 {
+  color:#38bdf8;
+}
+
+
+.cards {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  margin-top:20px;
+}
+
+
+.card {
+  background:#111827;
+  padding:25px;
+  border-radius:15px;
+  border:1px solid #1e293b;
+}
+
+
+.card h2 {
+  color:#38bdf8;
+}
+
+
+.charts {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:25px;
+  margin-top:30px;
+}
+
+
+.chart-box {
+  background:#111827;
+  padding:25px;
+  border-radius:15px;
+}
+
+
+.chart-box h2 {
+  color:white;
+}

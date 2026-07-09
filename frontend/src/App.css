@@ -163,3 +163,84 @@ button {
   letter-spacing: -1px;
   margin: 0 0 12px;
 }
+
+.page-desc {
+  color: #94a3b8;
+  margin-bottom: 25px;
+}
+
+.upload-box {
+  border: 2px dashed #38bdf8;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  background: #020617;
+  color: #cbd5e1;
+}
+
+.upload-box span {
+  display: block;
+  margin: 12px 0 20px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.file-btn {
+  display: inline-block;
+  background: #38bdf8;
+  color: #020617;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.file-btn input {
+  display: none;
+}
+
+.file-name {
+  margin-top: 18px;
+  color: #38bdf8;
+}
+
+.error-box {
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 12px;
+  background: #450a0a;
+  border: 1px solid #ef4444;
+  color: #fecaca;
+}
+
+.preview-box {
+  margin-top: 25px;
+  overflow-x: auto;
+}
+
+.preview-box h3 {
+  color: #38bdf8;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  background: #020617;
+}
+
+th,
+td {
+  border: 1px solid #1e293b;
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background: #1e3a8a;
+  color: white;
+}
+
+td {
+  color: #cbd5e1;
+}
