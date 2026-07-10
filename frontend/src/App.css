@@ -53,14 +53,31 @@ body {
   color: #94a3b8;
 }
 
-button {
+.login-card button {
+  width: 100%;
   background: #38bdf8;
   border: none;
   color: #020617;
-  padding: 12px 18px;
+  padding: 14px;
   border-radius: 10px;
   font-weight: bold;
+  font-size: 16px;
   cursor: pointer;
+  margin-top: 15px;
+  transition: 0.3s;
+}
+
+.login-card button:hover {
+  background: #0ea5e9;
+}
+
+.secondary-btn {
+  background: #334155 !important;
+  color: white !important;
+}
+
+.secondary-btn:hover {
+  background: #475569 !important;
 }
 
 .app {
@@ -244,3 +261,4 @@ th {
 td {
   color: #cbd5e1;
 }
+

@@ -1,4 +1,5 @@
 import Dashboard from "./components/Dashboard";
+import axios from "axios";
 import { useState } from "react";
 import "./App.css";
 
@@ -41,13 +42,20 @@ const roleMenus = {
 
 function App() {
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [role, setRole] = useState("Business Owner");
-  const [activePage, setActivePage] = useState("Dashboard");
+const [isLoggedIn, setIsLoggedIn] = useState(false);
+const [showRegister, setShowRegister] = useState(false);
 
-  const [fileName, setFileName] = useState("");
-  const [previewData, setPreviewData] = useState([]);
-  const [errors, setErrors] = useState([]);
+const [role, setRole] = useState("Business Owner");
+const [activePage, setActivePage] = useState("Dashboard");
+
+const [fullName, setFullName] = useState("");
+const [email, setEmail] = useState("");
+const [phone, setPhone] = useState("");
+const [password, setPassword] = useState("");
+
+const [fileName, setFileName] = useState("");
+const [previewData, setPreviewData] = useState([]);
+const [errors, setErrors] = useState([]);
 
 
   const requiredFields = [
@@ -180,76 +188,97 @@ function App() {
 
   };
 
+const roleMap = {
+  "Business Owner": 1,
+  "Store Manager": 2,
+  "Sales Executive": 3,
+  "System Administrator": 4,
+};
+
+const registerUser = async () => {
+
+  try {
+
+    const response = await axios.post(
+      "http://localhost:5000/api/auth/register",
+      {
+        full_name: fullName,
+        email: email,
+        password: password,
+        phone: phone,
+        role_id: roleMap[role],
+      }
+    );
+
+    alert(response.data.message || "Registration Successful");
+
+    setShowRegister(false);
+
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setPassword("");
+
+  } catch (error) {
+
+    alert(
+      error.response?.data?.message ||
+      "Registration Failed"
+    );
+
+  }
+
+};
 
 
+  if (!isLoggedIn) {
 
-  if(!isLoggedIn){
+  if (!showRegister) {
 
-    return(
+    return (
 
       <div className="login-page">
 
         <div className="login-card">
 
-          <h1>
-            MarketMind AI
-          </h1>
+          <h1>MarketMind AI</h1>
 
-
-          <p>
-            Small Business Sales Intelligence Platform
-          </p>
-
-
+          <p>Small Business Sales Intelligence Platform</p>
 
           <input
-            placeholder="Enter email"
+            type="email"
+            placeholder="Enter Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
-
 
           <input
             type="password"
-            placeholder="Enter password"
+            placeholder="Enter Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
-
-
 
           <select
             value={role}
-            onChange={
-              e=>setRole(e.target.value)
-            }
+            onChange={(e) => setRole(e.target.value)}
           >
-
-            <option>
-              Business Owner
-            </option>
-
-            <option>
-              Store Manager
-            </option>
-
-            <option>
-              Sales Executive
-            </option>
-
-            <option>
-              System Administrator
-            </option>
-
-
+            <option>Business Owner</option>
+            <option>Store Manager</option>
+            <option>Sales Executive</option>
+            <option>System Administrator</option>
           </select>
 
-
-
-          <button
-            onClick={()=>
-              setIsLoggedIn(true)
-            }
-          >
+          <button onClick={() => setIsLoggedIn(true)}>
             Login
           </button>
 
+          <button
+            className="secondary-btn"
+            onClick={() => setShowRegister(true)}
+          >
+            Get Started
+          </button>
 
         </div>
 
@@ -259,9 +288,72 @@ function App() {
 
   }
 
+return (
 
+  <div className="login-page">
 
-  return(
+    <div className="login-card">
+
+      <h1>MarketMind AI</h1>
+
+      <p>Create Your Account</p>
+
+      <input
+        placeholder="Full Name"
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
+      />
+
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+
+      <input
+        placeholder="Phone Number"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+
+      <select
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+      >
+        <option>Business Owner</option>
+        <option>Store Manager</option>
+        <option>Sales Executive</option>
+        <option>System Administrator</option>
+      </select>
+
+      <button onClick={registerUser}>
+        Get Started
+      </button>
+
+      <button
+        className="secondary-btn"
+        onClick={() => setShowRegister(false)}
+      >
+        Back to Login
+      </button>
+
+    </div>
+
+  </div>
+
+);
+
+}
+
+return(
 
     <div className="app">
 
