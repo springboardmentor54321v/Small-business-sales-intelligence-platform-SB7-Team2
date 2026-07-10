@@ -6,6 +6,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const productRoutes = require("./routes/productRoutes");
 const authRoutes = require('./routes/authRoutes');
 const inventoryRoutes = require("./routes/inventoryRoutes");
+const customerRoutes = require("./routes/customerRoutes");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api/customers", customerRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
