@@ -1,4 +1,5 @@
 import Dashboard from "./components/Dashboard";
+import api from "./api";
 import axios from "axios";
 import { useState } from "react";
 import "./App.css";
@@ -194,7 +195,38 @@ const roleMap = {
   "Sales Executive": 3,
   "System Administrator": 4,
 };
+const handleLogin = async () => {
 
+  if (!email || !password) {
+    alert("Please enter email and password");
+    return;
+  }
+
+  try {
+
+    const response = await api.post("/api/auth/login", {
+      email,
+      password,
+    });
+
+    localStorage.setItem("token", response.data.token);
+
+    alert("Login Successful");
+
+    setIsLoggedIn(true);
+
+  } catch (error) {
+
+    console.log(error.response?.data);
+console.log(error.response);
+
+alert(
+  JSON.stringify(error.response?.data) || "Login Failed"
+);
+
+  }
+
+};
 const registerUser = async () => {
 
   try {
@@ -269,9 +301,9 @@ const registerUser = async () => {
             <option>System Administrator</option>
           </select>
 
-          <button onClick={() => setIsLoggedIn(true)}>
-            Login
-          </button>
+          <button onClick={handleLogin}>
+  Login
+</button>
 
           <button
             className="secondary-btn"

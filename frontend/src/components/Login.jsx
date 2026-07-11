@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "../api";
 
 function Login({
   role,
@@ -10,17 +11,34 @@ function Login({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
+ const handleLogin = async () => {
 
-    // Login API will be integrated later
-    if (email.trim() === "" || password.trim() === "") {
-      alert("Please enter email and password");
-      return;
-    }
+  if (!email || !password) {
+    alert("Please enter email and password");
+    return;
+  }
+
+  try {
+
+    const response = await api.post("/api/auth/login", {
+      email,
+      password,
+    });
+
+    localStorage.setItem("token", response.data.token);
+
+    alert("Login Successful");
 
     setIsLoggedIn(true);
 
-  };
+  } catch (error) {
+
+    alert(
+      error.response?.data?.message || "Login Failed"
+    );
+
+  }
+};
 
   return (
 
