@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ../Frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  backend:
+    build: ../Backend_Dtabase
+    ports:
+      - "5000:5000"
+    depends_on:
+      - database
+
+  database:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: marketmind
+    ports:
+      - "5432:5432"
