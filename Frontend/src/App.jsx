@@ -343,30 +343,7 @@ const registerUser = async () => {
           <button onClick={handleLogin}>
   Login
 </button>
-<button
-  onClick={() => {
 
-    localStorage.setItem("token", "dev-token");
-
-    setRole("Manager");
-
-    setIsLoggedIn(true);
-
-  }}
-
-  style={{
-    width: "100%",
-    marginTop: "10px",
-    background: "#16a34a",
-    color: "#fff",
-    padding: "12px",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-  }}
->
-  Developer Login
-</button>
 
           <button
             className="secondary-btn"
