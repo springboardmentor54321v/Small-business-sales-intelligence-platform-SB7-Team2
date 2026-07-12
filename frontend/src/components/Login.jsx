@@ -68,11 +68,10 @@ function Login({
           value={role}
           onChange={(e) => setRole(e.target.value)}
         >
-          <option>Business Owner</option>
-          <option>Store Manager</option>
-          <option>Sales Executive</option>
-          <option>System Administrator</option>
-        </select>
+          <option>Admin</option>
+  <option>Manager</option>
+  <option>Sales Executive</option>
+</select>
 
         <button
   onClick={handleLogin}

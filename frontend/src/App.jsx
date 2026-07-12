@@ -1,21 +1,21 @@
 import Dashboard from "./components/Dashboard";
+import Inventory from "./components/Inventory";
 import api from "./api";
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 
 
 const roleMenus = {
-  "Business Owner": [
+  Admin: [
     "Dashboard",
-    "Sales Upload",
-    "Inventory",
+    "Users",
     "Reports",
-    "Forecast",
+    "Settings",
     "Logout",
   ],
 
-  "Store Manager": [
+  Manager: [
     "Dashboard",
     "Sales Upload",
     "Inventory",
@@ -29,24 +29,24 @@ const roleMenus = {
     "My Sales",
     "Logout",
   ],
-
-  "System Administrator": [
-    "Dashboard",
-    "Users",
-    "Roles",
-    "Reports",
-    "Settings",
-    "Logout",
-  ],
 };
 
 
 function App() {
 
 const [isLoggedIn, setIsLoggedIn] = useState(false);
+useEffect(() => {
+
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    setIsLoggedIn(true);
+  }
+
+}, []);
 const [showRegister, setShowRegister] = useState(false);
 
-const [role, setRole] = useState("Business Owner");
+const [role, setRole] = useState("Admin");
 const [activePage, setActivePage] = useState("Dashboard");
 
 const [fullName, setFullName] = useState("");
@@ -55,6 +55,7 @@ const [phone, setPhone] = useState("");
 const [password, setPassword] = useState("");
 
 const [fileName, setFileName] = useState("");
+const [selectedFile, setSelectedFile] = useState(null);
 const [previewData, setPreviewData] = useState([]);
 const [errors, setErrors] = useState([]);
 
@@ -75,6 +76,7 @@ const [errors, setErrors] = useState([]);
 
 
     setFileName(file.name);
+    setSelectedFile(file);
     setErrors([]);
     setPreviewData([]);
 
@@ -189,11 +191,50 @@ const [errors, setErrors] = useState([]);
 
   };
 
+  const uploadSalesCSV = async () => {
+
+  if (!selectedFile) {
+    alert("Please choose a CSV file first.");
+    return;
+  }
+
+  try {
+
+    const token = localStorage.getItem("token");
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    const response = await api.post(
+      "/api/upload/sales",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    alert(response.data.message || "Sales CSV uploaded successfully.");
+    setSelectedFile(null);
+    setFileName("");
+    setPreviewData([]);
+
+  } catch (error) {
+
+    alert(
+      error.response?.data?.message || "CSV Upload Failed"
+    );
+
+  }
+
+};
+
 const roleMap = {
-  "Business Owner": 1,
-  "Store Manager": 2,
+  Admin: 1,
+  Manager: 2,
   "Sales Executive": 3,
-  "System Administrator": 4,
 };
 const handleLogin = async () => {
 
@@ -295,10 +336,9 @@ const registerUser = async () => {
             value={role}
             onChange={(e) => setRole(e.target.value)}
           >
-            <option>Business Owner</option>
-            <option>Store Manager</option>
+            <option>Admin</option>
+            <option>Manager</option>
             <option>Sales Executive</option>
-            <option>System Administrator</option>
           </select>
 
           <button onClick={handleLogin}>
@@ -360,10 +400,9 @@ return (
         value={role}
         onChange={(e) => setRole(e.target.value)}
       >
-        <option>Business Owner</option>
-        <option>Store Manager</option>
+        <option>Admin</option>
+        <option>Manager</option>
         <option>Sales Executive</option>
-        <option>System Administrator</option>
       </select>
 
       <button onClick={registerUser}>
@@ -423,11 +462,15 @@ return(
 
               onClick={()=>{
 
-                if(item==="Logout"){
+                if (item === "Logout") {
 
-                  setIsLoggedIn(false);
+                    localStorage.removeItem("token");
 
-                }
+                    setIsLoggedIn(false);
+
+                    setActivePage("Dashboard");
+
+                  }
 
                 else{
 
@@ -466,7 +509,13 @@ return(
 
           )
         }
+        {
+  activePage === "Inventory" && (
 
+    <Inventory />
+
+  )
+}
 
 
 
@@ -532,15 +581,25 @@ return(
 
 
 
-            {
-              fileName &&
+           {
+  fileName && (
+    <>
+      <p>
+        Selected file: {fileName}
+      </p>
 
-              <p>
-                Selected file: {fileName}
-              </p>
-
-            }
-
+      <button
+        onClick={uploadSalesCSV}
+        style={{
+          marginTop: "15px",
+          width: "100%",
+        }}
+      >
+        Upload CSV
+      </button>
+    </>
+  )
+}
 
 
 

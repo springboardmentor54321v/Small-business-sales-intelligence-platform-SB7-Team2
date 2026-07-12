@@ -5,18 +5,11 @@ function Register({
   setShowRegister,
 }) {
 
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("Business Owner");
-
   const roleMap = {
-    "Business Owner": 1,
-    "Store Manager": 2,
-    "Sales Executive": 3,
-    "System Administrator": 4,
-  };
+  Admin: 1,
+  Manager: 2,
+  "Sales Executive": 3,
+};
 
   const registerUser = async () => {
 
@@ -93,10 +86,9 @@ function Register({
           value={role}
           onChange={(e)=>setRole(e.target.value)}
         >
-          <option>Business Owner</option>
-          <option>Store Manager</option>
-          <option>Sales Executive</option>
-          <option>System Administrator</option>
+          <option>Admin</option>
+<option>Manager</option>
+<option>Sales Executive</option>
         </select>
 
         <button onClick={registerUser}>

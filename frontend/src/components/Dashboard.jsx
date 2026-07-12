@@ -10,6 +10,8 @@ import {
 } from "chart.js";
 
 import { Line, Pie } from "react-chartjs-2";
+import { useEffect, useState } from "react";
+import api from "../api";
 import "./Dashboard.css";
 
 
@@ -25,97 +27,129 @@ ChartJS.register(
 
 
 function Dashboard() {
+const [dashboardData, setDashboardData] = useState(null);
+const [loading, setLoading] = useState(true);
+useEffect(() => {
 
+  const fetchDashboard = async () => {
 
-  const salesTrend = {
+    try {
 
-    labels:[
-      "Mon",
-      "Tue",
-      "Wed",
-      "Thu",
-      "Fri",
-      "Sat",
-      "Sun"
-    ],
+      const token = localStorage.getItem("token");
 
-    datasets:[
+      const response = await api.get("/api/dashboard", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      {
-        label:"Daily Sales",
+      console.log(response.data);
 
-        data:[
-          1200,
-          1800,
-          900,
-          2500,
-          2000,
-          3200,
-          2800
-        ],
+      setDashboardData(response.data.dashboard);
 
-        borderColor:"#38bdf8",
+    } catch (error) {
 
-        backgroundColor:"#38bdf8",
+      console.error("Dashboard API Error:", error);
 
-        pointBackgroundColor:"#ffffff",
+    } finally {
 
-        pointBorderColor:"#38bdf8",
+      setLoading(false);
 
-        borderWidth:3,
-
-        tension:0.4
-
-      }
-
-    ]
+    }
 
   };
+
+  fetchDashboard();
+
+}, []);
+
+if (loading) {
+  return (
+    <div className="dashboard">
+      <h2>Loading Dashboard...</h2>
+    </div>
+  );
+}
+
+if (!dashboardData) {
+  return (
+    <div className="dashboard">
+      <h2>Dashboard unavailable.</h2>
+      <p>Waiting for backend connection...</p>
+    </div>
+  );
+}
+  const salesTrend = {
+
+  labels: dashboardData.recentSales.map(
+    (sale) =>
+      new Date(sale.sale_date).toLocaleDateString()
+  ),
+
+  datasets: [
+
+    {
+
+      label: "Recent Sales",
+
+      data: dashboardData.recentSales.map(
+        (sale) => sale.total_amount
+      ),
+
+      borderColor: "#38bdf8",
+
+      backgroundColor: "#38bdf8",
+
+      pointBackgroundColor: "#ffffff",
+
+      pointBorderColor: "#38bdf8",
+
+      borderWidth: 3,
+
+      tension: 0.4,
+
+    },
+
+  ],
+
+};
 
 
 
   const products = {
 
-    labels:[
-      "Rice",
-      "Oil",
-      "Sugar",
-      "Snacks"
-    ],
+  labels: dashboardData.topSellingProducts.map(
+    (item) => item.product_name
+  ),
 
+  datasets: [
 
-    datasets:[
+    {
 
-      {
+      label: "Top Products",
 
-        label:"Top Products",
+      data: dashboardData.topSellingProducts.map(
+        (item) => item.total_quantity_sold
+      ),
 
-        data:[
-          45,
-          30,
-          20,
-          15
-        ],
+      backgroundColor: [
+        "#38bdf8",
+        "#22c55e",
+        "#facc15",
+        "#f97316",
+        "#ef4444",
+        "#8b5cf6",
+      ],
 
+      borderColor: "#ffffff",
 
-        backgroundColor:[
-          "#38bdf8",
-          "#22c55e",
-          "#facc15",
-          "#f97316"
-        ],
+      borderWidth: 2,
 
+    },
 
-        borderColor:"#ffffff",
+  ],
 
-        borderWidth:2
-
-      }
-
-    ]
-
-  };
-
+};
 
 
   const chartOptions={
@@ -189,7 +223,7 @@ function Dashboard() {
           </h3>
 
           <h2>
-            ₹1,25,000
+            ₹{dashboardData.totalRevenue}
           </h2>
 
           <p>
@@ -207,7 +241,7 @@ function Dashboard() {
           </h3>
 
           <h2>
-            320
+            {dashboardData.totalSales}
           </h2>
 
           <p>
@@ -225,7 +259,7 @@ function Dashboard() {
           </h3>
 
           <h2>
-            Rice
+            {dashboardData.topSellingProducts?.[0]?.product_name || "N/A"}
           </h2>
 
           <p>
@@ -277,7 +311,43 @@ function Dashboard() {
 
 
       </div>
+      <div className="chart-box">
 
+  <h2>Recent Sales</h2>
+
+  <table>
+
+    <thead>
+
+      <tr>
+        <th>Invoice</th>
+        <th>Customer</th>
+        <th>Amount</th>
+        <th>Status</th>
+      </tr>
+
+    </thead>
+
+    <tbody>
+
+      {dashboardData.recentSales.map((sale) => (
+
+        <tr key={sale.sale_id}>
+
+          <td>{sale.invoice_no}</td>
+          <td>{sale.customer_name}</td>
+          <td>₹{sale.total_amount}</td>
+          <td>{sale.payment_status}</td>
+
+        </tr>
+
+      ))}
+
+    </tbody>
+
+  </table>
+
+</div>
 
 
     </div>
