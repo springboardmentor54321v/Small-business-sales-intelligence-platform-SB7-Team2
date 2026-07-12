@@ -61,13 +61,12 @@ const [errors, setErrors] = useState([]);
 
 
   const requiredFields = [
-    "invoice_no",
-    "customer_id",
-    "product_id",
-    "quantity",
-    "amount",
-    "date"
-  ];
+  "customer_id",
+  "product_id",
+  "quantity",
+  "payment_method",
+  "payment_status"
+];
 
 
   const handleFileUpload = (file) => {
