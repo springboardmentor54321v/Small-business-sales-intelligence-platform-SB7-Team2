@@ -66,7 +66,9 @@ useEffect(() => {
 if (loading) {
   return (
     <div className="dashboard">
-      <h2>Loading Dashboard...</h2>
+      <div className="loading">
+        Loading Dashboard...
+      </div>
     </div>
   );
 }
@@ -74,8 +76,17 @@ if (loading) {
 if (!dashboardData) {
   return (
     <div className="dashboard">
-      <h2>Dashboard unavailable.</h2>
-      <p>Waiting for backend connection...</p>
+
+      <div className="empty-state">
+
+        <h2>No Dashboard Data</h2>
+
+        <p>
+          Please upload sales data or connect the backend server.
+        </p>
+
+      </div>
+
     </div>
   );
 }

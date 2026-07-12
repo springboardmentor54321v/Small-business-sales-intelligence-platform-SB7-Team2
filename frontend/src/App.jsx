@@ -589,13 +589,11 @@ return(
       </p>
 
       <button
-        onClick={uploadSalesCSV}
-        style={{
-          marginTop: "15px",
-          width: "100%",
-        }}
-      >
-        Upload CSV
+      className="upload-btn"
+      onClick={uploadSalesCSV}
+      disabled={!selectedFile}
+>
+      Upload CSV to Server
       </button>
     </>
   )
