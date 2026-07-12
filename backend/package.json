@@ -10,6 +10,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
+    "csv-parser": "^3.2.1",
     "dotenv": "^16.6.1",
     "express": "^4.22.2",
     "express-rate-limit": "^8.5.2",
