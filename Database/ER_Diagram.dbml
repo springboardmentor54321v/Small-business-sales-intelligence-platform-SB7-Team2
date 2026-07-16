@@ -1,0 +1,69 @@
+Table Roles {
+  role_id int [pk, increment]
+  role_name varchar
+  description varchar
+}
+
+Table Users {
+  user_id int [pk, increment]
+  full_name varchar
+  email varchar [unique]
+  password varchar
+  phone varchar
+  role_id int [ref: > Roles.role_id]
+  created_at datetime
+  updated_at datetime
+}
+
+Table Customers {
+  customer_id int [pk, increment]
+  customer_name varchar
+  email varchar
+  phone varchar
+  address varchar
+  created_at datetime
+}
+
+Table Categories {
+  category_id int [pk, increment]
+  category_name varchar
+}
+
+Table Products {
+  product_id int [pk, increment]
+  product_name varchar
+  category_id int [ref: > Categories.category_id]
+  price decimal
+  description text
+  created_at datetime
+  updated_at datetime
+}
+
+Table Inventory {
+  inventory_id int [pk, increment]
+  product_id int [unique, ref: > Products.product_id]
+  stock_quantity int
+  reorder_level int
+  warehouse_location varchar
+  last_updated datetime
+}
+
+Table Sales_Transactions {
+  sale_id int [pk, increment]
+  invoice_no varchar [unique]
+  customer_id int [ref: > Customers.customer_id]
+  user_id int [ref: > Users.user_id]
+  total_amount decimal
+  payment_method varchar
+  payment_status varchar
+  sale_date datetime
+}
+
+Table Sales_Items {
+  sales_item_id int [pk, increment]
+  sale_id int [ref: > Sales_Transactions.sale_id]
+  product_id int [ref: > Products.product_id]
+  quantity int
+  unit_price decimal
+  subtotal decimal
+}
