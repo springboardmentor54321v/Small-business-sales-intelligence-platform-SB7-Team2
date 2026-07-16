@@ -1,5 +1,11 @@
 import Dashboard from "./components/Dashboard";
 import Inventory from "./components/Inventory";
+import CreateInvoice from "./components/CreateInvoice";
+import InvoiceList from "./components/InvoiceList";
+import CustomerInsights from "./components/CustomerInsights";
+import Recommendation from "./components/Recommendation";
+import AnomalyAlerts from "./components/AnomalyAlerts";
+import ForecastReports from "./components/ForecastReports";
 import api from "./api";
 import axios from "axios";
 import { useState, useEffect } from "react";
@@ -15,13 +21,18 @@ const roleMenus = {
     "Logout",
   ],
 
-  Manager: [
-    "Dashboard",
-    "Sales Upload",
-    "Inventory",
-    "Reports",
-    "Logout",
-  ],
+Manager: [
+  "Dashboard",
+  "Create Invoice",
+  "Invoice List",
+  "Customer Insights",
+  "Recommendation",
+  "Anomaly Alerts",
+  "Forecast Reports",
+  "Inventory",
+  "Reports",
+  "Logout",
+],
 
   "Sales Executive": [
     "Dashboard",
@@ -516,7 +527,41 @@ return(
 
   )
 }
+{
+  activePage === "Create Invoice" && (
+    <CreateInvoice />
+  )
+}
 
+{
+  activePage === "Invoice List" && (
+    <InvoiceList />
+  )
+}
+
+{
+  activePage === "Customer Insights" && (
+    <CustomerInsights />
+  )
+}
+
+{
+  activePage === "Recommendation" && (
+    <Recommendation />
+  )
+}
+
+{
+  activePage === "Anomaly Alerts" && (
+    <AnomalyAlerts />
+  )
+}
+
+{
+  activePage === "Forecast Reports" && (
+    <ForecastReports />
+  )
+}
 
 
 
