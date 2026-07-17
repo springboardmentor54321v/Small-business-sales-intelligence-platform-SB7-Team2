@@ -4,6 +4,8 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 
 const authRoutes = require('./routes/authRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
+const salesRoutes = require("./routes/salesRoutes");
 
 const app = express();
 
@@ -30,5 +32,12 @@ app.get("/", (req, res) => {
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+
+// Invoice routes
+app.use("/api/invoices", invoiceRoutes);
+
+// Sales routes
+app.use("/api/sales", salesRoutes);
 
 module.exports = app;

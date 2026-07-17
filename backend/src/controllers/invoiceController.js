@@ -1,15 +1,13 @@
 const { pool } = require("../config/db");
 
-// Get all sales
-const getSales = async (req, res) => {
+// Get all invoices
+const getInvoices = async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT * FROM sales_transactions ORDER BY sale_id"
-    );
+    const result = await pool.query("SELECT * FROM invoices");
 
     res.status(200).json({
       success: true,
-      sales: result.rows,
+      invoices: result.rows,
     });
   } catch (error) {
     console.error(error);
@@ -21,37 +19,29 @@ const getSales = async (req, res) => {
   }
 };
 
-// Create sale
-const createSale = async (req, res) => {
+// Create new invoice
+const createInvoice = async (req, res) => {
   try {
     const {
-      invoice_no,
+      invoice_number,
       customer_id,
-      user_id,
+      sale_id,
       total_amount,
-      payment_method,
-      payment_status,
+      status,
     } = req.body;
 
     const result = await pool.query(
-      `INSERT INTO sales_transactions
-      (invoice_no, customer_id, user_id, total_amount, payment_method, payment_status)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO invoices
+      (invoice_number, customer_id, sale_id, total_amount, status)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *`,
-      [
-        invoice_no,
-        customer_id,
-        user_id,
-        total_amount,
-        payment_method,
-        payment_status,
-      ]
+      [invoice_number, customer_id, sale_id, total_amount, status]
     );
 
     res.status(201).json({
       success: true,
-      message: "Sale created successfully",
-      sale: result.rows[0],
+      message: "Invoice created successfully",
+      invoice: result.rows[0],
     });
   } catch (error) {
     console.error(error);
@@ -62,28 +52,29 @@ const createSale = async (req, res) => {
     });
   }
 };
-// Get sale by ID
-const getSaleById = async (req, res) => {
+
+
+// Get invoice by ID
+const getInvoiceById = async (req, res) => {
   try {
     const { id } = req.params;
 
     const result = await pool.query(
-      "SELECT * FROM sales_transactions WHERE sale_id = $1",
+      "SELECT * FROM invoices WHERE invoice_id = $1",
       [id]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Sale not found",
+        message: "Invoice not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      sale: result.rows[0],
+      invoice: result.rows[0],
     });
-
   } catch (error) {
     console.error(error);
 
@@ -93,38 +84,34 @@ const getSaleById = async (req, res) => {
     });
   }
 };
-
-// Update sale
-const updateSale = async (req, res) => {
+// Update invoice
+const updateInvoice = async (req, res) => {
   try {
     const { id } = req.params;
 
     const {
-      invoice_no,
+      invoice_number,
       customer_id,
-      user_id,
+      sale_id,
       total_amount,
-      payment_method,
-      payment_status,
+      status,
     } = req.body;
 
     const result = await pool.query(
-      `UPDATE sales_transactions
-       SET invoice_no = $1,
-           customer_id = $2,
-           user_id = $3,
-           total_amount = $4,
-           payment_method = $5,
-           payment_status = $6
-       WHERE sale_id = $7
+      `UPDATE invoices
+       SET invoice_number=$1,
+           customer_id=$2,
+           sale_id=$3,
+           total_amount=$4,
+           status=$5
+       WHERE invoice_id=$6
        RETURNING *`,
       [
-        invoice_no,
+        invoice_number,
         customer_id,
-        user_id,
+        sale_id,
         total_amount,
-        payment_method,
-        payment_status,
+        status,
         id,
       ]
     );
@@ -132,14 +119,14 @@ const updateSale = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Sale not found",
+        message: "Invoice not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "Sale updated successfully",
-      sale: result.rows[0],
+      message: "Invoice updated successfully",
+      invoice: result.rows[0],
     });
 
   } catch (error) {
@@ -151,27 +138,26 @@ const updateSale = async (req, res) => {
     });
   }
 };
-
-// Delete sale
-const deleteSale = async (req, res) => {
+// Delete invoice
+const deleteInvoice = async (req, res) => {
   try {
     const { id } = req.params;
 
     const result = await pool.query(
-      "DELETE FROM sales_transactions WHERE sale_id = $1 RETURNING *",
+      "DELETE FROM invoices WHERE invoice_id = $1 RETURNING *",
       [id]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Sale not found",
+        message: "Invoice not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "Sale deleted successfully",
+      message: "Invoice deleted successfully",
     });
 
   } catch (error) {
@@ -187,9 +173,9 @@ const deleteSale = async (req, res) => {
 
 
 module.exports = {
-  getSales,
-  createSale,
-  getSaleById,
-  updateSale,
-  deleteSale,
+  getInvoices,
+  createInvoice,
+  getInvoiceById,
+  updateInvoice,
+  deleteInvoice,
 };
