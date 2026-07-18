@@ -14,16 +14,24 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
+const {
+  validateBody,
+  validateParams,
+  createPaymentSchema,
+  updatePaymentSchema,
+  idParamSchema
+} = require("../middleware/validationMiddleware");
 
 const router = express.Router();
 
 // Apply protection middleware to all payment routes
 router.use(protect);
 
-// Payment Routes with RBAC
+// Payment Routes with RBAC and Joi Validation
 router.post(
   "/",
   authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
+  validateBody(createPaymentSchema),
   createPayment
 );
 
@@ -36,18 +44,22 @@ router.get(
 router.get(
   "/:id",
   authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  validateParams(idParamSchema),
   getPaymentById
 );
 
 router.put(
   "/:id",
   authorizeRoles("Business Owner", "System Administrator"),
+  validateParams(idParamSchema),
+  validateBody(updatePaymentSchema),
   updatePayment
 );
 
 router.delete(
   "/:id",
   authorizeRoles("System Administrator"),
+  validateParams(idParamSchema),
   deletePayment
 );
 
