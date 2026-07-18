@@ -1,0 +1,14 @@
+MODEL EVALUATION REPORT
+=======================
+
+Algorithm: Linear Regression
+
+Mean Absolute Error (MAE): 274.95
+Mean Squared Error (MSE): 569298.42
+Root Mean Squared Error (RMSE): 754.52
+R2 Score: 0.0362
+
+Observations:
+- The model successfully predicts sales.
+- This serves as a baseline forecasting model.
+- Future improvements can use Random Forest and XGBoost.
