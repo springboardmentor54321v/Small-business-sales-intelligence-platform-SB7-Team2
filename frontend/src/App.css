@@ -262,3 +262,21 @@ td {
   color: #cbd5e1;
 }
 
+.card {
+  background: #1b2336;
+  padding: 20px;
+  border-radius: 12px;
+  color: white;
+  flex: 1;
+  min-width: 220px;
+  border: 1px solid #2d3c5b;
+}
+
+.card h2 {
+  color: #38bdf8;
+  margin-bottom: 10px;
+}
+
+.card p {
+  color: #d1d5db;
+}

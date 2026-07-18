@@ -268,46 +268,112 @@ exports.getInvoiceById = async (req, res) => {
 // Update Invoice by ID
 // PUT /api/invoices/:id
 exports.updateInvoice = async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    const { due_date, payment_status, notes, tax, discount } = req.body;
+    const { due_date, notes, tax, discount } = req.body;
 
-    const checkRes = await pool.query("SELECT * FROM invoices WHERE invoice_id = $1", [id]);
-    if (checkRes.rows.length === 0) {
-      return res.status(404).json({
+    const numInvoiceId = parseInt(id, 10);
+    if (isNaN(numInvoiceId) || numInvoiceId <= 0) {
+      return res.status(400).json({
         success: false,
-        message: "Invoice not found"
+        message: "Invoice ID must be a positive integer."
       });
+    }
+
+    await client.query("BEGIN");
+
+    // Lock the invoice row
+    const checkRes = await client.query(
+      "SELECT * FROM invoices WHERE invoice_id = $1 FOR UPDATE", 
+      [numInvoiceId]
+    );
+    if (checkRes.rows.length === 0) {
+      const err = new Error("Invoice not found");
+      err.statusCode = 404;
+      throw err;
     }
 
     const invoice = checkRes.rows[0];
 
     const updatedDueDate = due_date || invoice.due_date;
-    const updatedPaymentStatus = payment_status || invoice.payment_status;
     const updatedNotes = notes !== undefined ? notes : invoice.notes;
     const updatedTax = tax !== undefined ? parseFloat(tax) : parseFloat(invoice.tax);
     const updatedDiscount = discount !== undefined ? parseFloat(discount) : parseFloat(invoice.discount);
 
+    if (isNaN(updatedTax) || updatedTax < 0) {
+      const err = new Error("tax must be a non-negative number.");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (isNaN(updatedDiscount) || updatedDiscount < 0) {
+      const err = new Error("discount must be a non-negative number.");
+      err.statusCode = 400;
+      throw err;
+    }
+
     const subtotal = parseFloat(invoice.subtotal);
     const total_amount = subtotal + updatedTax - updatedDiscount;
 
-    await pool.query(
+    if (total_amount < 0) {
+      const err = new Error("Total amount cannot be negative.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // Get completed payments
+    const paymentsRes = await client.query(
+      `SELECT COALESCE(SUM(amount_paid), 0) AS total_completed 
+       FROM payments 
+       WHERE invoice_id = $1 AND payment_status = 'Completed'`,
+      [numInvoiceId]
+    );
+    const totalCompleted = parseFloat(paymentsRes.rows[0].total_completed);
+
+    // Prevent reducing the invoice total amount to be less than the already completed payments amount
+    if (total_amount < totalCompleted - 0.005) {
+      const err = new Error(`Cannot update invoice: new total amount ($${total_amount.toFixed(2)}) is less than the already paid amount ($${totalCompleted.toFixed(2)}).`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // Auto calculate payment status
+    let updatedPaymentStatus = "Unpaid";
+    if (totalCompleted >= total_amount - 0.005) {
+      updatedPaymentStatus = "Paid";
+    } else if (totalCompleted > 0.005) {
+      updatedPaymentStatus = "Partial";
+    }
+
+    await client.query(
       `UPDATE invoices 
        SET due_date = $1, payment_status = $2, notes = $3, tax = $4, discount = $5, total_amount = $6, updated_at = CURRENT_TIMESTAMP
        WHERE invoice_id = $7`,
-      [updatedDueDate, updatedPaymentStatus, updatedNotes, updatedTax, updatedDiscount, total_amount, id]
+      [updatedDueDate, updatedPaymentStatus, updatedNotes, updatedTax, updatedDiscount, total_amount, numInvoiceId]
     );
+
+    await client.query("COMMIT");
 
     return res.status(200).json({
       success: true,
-      message: "Invoice updated successfully"
+      message: "Invoice updated successfully",
+      invoice_status: updatedPaymentStatus,
+      total_amount: total_amount
     });
+
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Error in updateInvoice:", error);
-    return res.status(500).json({
+
+    const statusCode = error.statusCode || 500;
+    const message = error.message || "Failed to update invoice";
+
+    return res.status(statusCode).json({
       success: false,
-      message: "Failed to update invoice"
+      message: message
     });
+  } finally {
+    client.release();
   }
 };
 
@@ -317,32 +383,75 @@ exports.deleteInvoice = async (req, res) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
+    const numInvoiceId = parseInt(id, 10);
 
-    await client.query("BEGIN");
-
-    const checkRes = await client.query("SELECT * FROM invoices WHERE invoice_id = $1", [id]);
-    if (checkRes.rows.length === 0) {
-      return res.status(404).json({
+    if (isNaN(numInvoiceId) || numInvoiceId <= 0) {
+      return res.status(400).json({
         success: false,
-        message: "Invoice not found"
+        message: "Invoice ID must be a positive integer."
       });
     }
 
+    await client.query("BEGIN");
+
+    // Lock the invoice row
+    const checkRes = await client.query(
+      "SELECT * FROM invoices WHERE invoice_id = $1 FOR UPDATE", 
+      [numInvoiceId]
+    );
+    if (checkRes.rows.length === 0) {
+      const err = new Error("Invoice not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    // Check if any payments are associated with this invoice
+    const paymentsCheck = await client.query(
+      "SELECT COUNT(*) as count FROM payments WHERE invoice_id = $1",
+      [numInvoiceId]
+    );
+    const paymentCount = parseInt(paymentsCheck.rows[0].count, 10);
+    if (paymentCount > 0) {
+      const err = new Error(`Cannot delete invoice: it has ${paymentCount} associated payment record(s). Delete payments first to maintain audit integrity.`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // Fetch invoice items to restore stock
+    const itemsRes = await client.query(
+      "SELECT product_id, quantity FROM invoice_items WHERE invoice_id = $1",
+      [numInvoiceId]
+    );
+
+    // Restore stock in inventory
+    for (const item of itemsRes.rows) {
+      await client.query(
+        `UPDATE inventory 
+         SET stock_quantity = stock_quantity + $1, last_updated = CURRENT_TIMESTAMP
+         WHERE product_id = $2`,
+        [item.quantity, item.product_id]
+      );
+    }
+
     // Delete invoice (cascades to invoice_items automatically)
-    await client.query("DELETE FROM invoices WHERE invoice_id = $1", [id]);
+    await client.query("DELETE FROM invoices WHERE invoice_id = $1", [numInvoiceId]);
 
     await client.query("COMMIT");
 
     return res.status(200).json({
       success: true,
-      message: "Invoice deleted successfully"
+      message: "Invoice deleted successfully and stock restored."
     });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error in deleteInvoice:", error);
-    return res.status(500).json({
+
+    const statusCode = error.statusCode || 500;
+    const message = error.message || "Failed to delete invoice";
+
+    return res.status(statusCode).json({
       success: false,
-      message: "Failed to delete invoice"
+      message: message
     });
   } finally {
     client.release();
