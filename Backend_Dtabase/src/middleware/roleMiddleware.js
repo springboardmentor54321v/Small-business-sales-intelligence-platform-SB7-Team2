@@ -1,12 +1,27 @@
 const { pool } = require("../config/db");
+const { logSecurityEvent } = require("./activityLogger");
 
 const authorizeRoles = (...allowedRoles) => {
     return async (req, res, next) => {
+        const clientIp = (req.headers["x-forwarded-for"] || req.ip || req.socket.remoteAddress || "").split(",")[0].trim();
+        const endpoint = req.originalUrl || req.url;
+
         try {
             // role comes from JWT middleware (usually role_id)
             const userRoleId = req.user?.role;
+            const userId = req.user?.id || req.user?.user_id || null;
 
             if (!userRoleId) {
+                logSecurityEvent({
+                    userId,
+                    endpoint,
+                    httpMethod: req.method,
+                    responseStatus: 403,
+                    clientIp,
+                    eventType: "ACCESS_FORBIDDEN",
+                    details: "Access denied. User role not present in token."
+                }).catch(err => console.error("Error logging ACCESS_FORBIDDEN:", err.message));
+
                 return res.status(403).json({
                     success: false,
                     message: "Access Denied"
@@ -42,6 +57,16 @@ const authorizeRoles = (...allowedRoles) => {
                     return next();
                 }
             }
+
+            logSecurityEvent({
+                userId,
+                endpoint,
+                httpMethod: req.method,
+                responseStatus: 403,
+                clientIp,
+                eventType: "ACCESS_FORBIDDEN",
+                details: `Access denied for role_id: ${userRoleId}. Required: ${allowedRoles.join(", ")}`
+            }).catch(err => console.error("Error logging ACCESS_FORBIDDEN:", err.message));
 
             return res.status(403).json({
                 success: false,

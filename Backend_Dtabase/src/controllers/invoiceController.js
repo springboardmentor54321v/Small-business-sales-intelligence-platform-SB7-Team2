@@ -193,110 +193,21 @@ exports.createInvoice = async (req, res) => {
   }
 };
 
-// Get All Invoices (with Search, Filtering, and Overdue calculations)
+// Get All Invoices
 // GET /api/invoices
 exports.getInvoices = async (req, res) => {
   try {
-    const { search, payment_status, status, customer_id, start_date, end_date, overdue } = req.query;
-
-    const filterStatus = payment_status || status;
-
-    let whereClauses = [];
-    let queryParams = [];
-    let paramIndex = 1;
-
-    // Search filter (invoice_no or customer_name)
-    if (search && search.trim() !== "") {
-      whereClauses.push(`(i.invoice_no ILIKE $${paramIndex} OR c.customer_name ILIKE $${paramIndex})`);
-      queryParams.push(`%${search.trim()}%`);
-      paramIndex++;
-    }
-
-    // Customer ID filter
-    if (customer_id) {
-      whereClauses.push(`i.customer_id = $${paramIndex}`);
-      queryParams.push(customer_id);
-      paramIndex++;
-    }
-
-    // Status filter (Paid, Unpaid, Partial, Overdue)
-    if (filterStatus) {
-      if (filterStatus === "Overdue") {
-        whereClauses.push(`i.due_date < CURRENT_DATE AND i.payment_status != 'Paid'`);
-      } else {
-        whereClauses.push(`i.payment_status = $${paramIndex}`);
-        queryParams.push(filterStatus);
-        paramIndex++;
-      }
-    }
-
-    // Overdue boolean flag filter
-    if (overdue === true || overdue === "true") {
-      whereClauses.push(`i.due_date < CURRENT_DATE AND i.payment_status != 'Paid'`);
-    }
-
-    // Date range filter
-    if (start_date) {
-      whereClauses.push(`i.invoice_date >= $${paramIndex}`);
-      queryParams.push(start_date);
-      paramIndex++;
-    }
-
-    if (end_date) {
-      whereClauses.push(`i.invoice_date <= $${paramIndex}::timestamp + INTERVAL '1 day'`);
-      queryParams.push(end_date);
-      paramIndex++;
-    }
-
-    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
-
-    const query = `
-      SELECT 
-        i.*, 
-        c.customer_name, 
-        c.email as customer_email,
-        u.full_name as user_name,
-        COALESCE(p_sum.total_paid, 0) AS amount_paid,
-        GREATEST(0, i.total_amount - COALESCE(p_sum.total_paid, 0)) AS balance_due,
-        CASE 
-          WHEN i.due_date < CURRENT_DATE AND i.payment_status != 'Paid' THEN true 
-          ELSE false 
-        END AS is_overdue,
-        CASE 
-          WHEN i.due_date < CURRENT_DATE AND i.payment_status != 'Paid' THEN (CURRENT_DATE - i.due_date::date)
-          ELSE 0 
-        END AS days_overdue
-      FROM invoices i
-      LEFT JOIN customers c ON i.customer_id = c.customer_id
-      LEFT JOIN users u ON i.user_id = u.user_id
-      LEFT JOIN (
-        SELECT invoice_id, SUM(amount_paid) AS total_paid
-        FROM payments
-        WHERE payment_status = 'Completed'
-        GROUP BY invoice_id
-      ) p_sum ON i.invoice_id = p_sum.invoice_id
-      ${whereSql}
-      ORDER BY i.invoice_id DESC
-    `;
-
-    const result = await pool.query(query, queryParams);
-
-    const invoices = result.rows.map(row => ({
-      ...row,
-      subtotal: parseFloat(row.subtotal),
-      tax: parseFloat(row.tax),
-      discount: parseFloat(row.discount),
-      total_amount: parseFloat(row.total_amount),
-      amount_paid: parseFloat(row.amount_paid),
-      balance_due: parseFloat(row.balance_due),
-      days_overdue: parseInt(row.days_overdue, 10)
-    }));
-
+    const result = await pool.query(
+      `SELECT i.*, c.customer_name, u.full_name as user_name 
+       FROM invoices i
+       LEFT JOIN customers c ON i.customer_id = c.customer_id
+       LEFT JOIN users u ON i.user_id = u.user_id
+       ORDER BY i.invoice_id DESC`
+    );
     return res.status(200).json({
       success: true,
       message: "Invoices fetched successfully",
-      count: invoices.length,
-      invoices
+      invoices: result.rows
     });
   } catch (error) {
     console.error("Error in getInvoices:", error);
@@ -314,30 +225,10 @@ exports.getInvoiceById = async (req, res) => {
     const { id } = req.params;
     
     const invoiceRes = await pool.query(
-      `SELECT 
-        i.*, 
-        c.customer_name, 
-        c.email as customer_email, 
-        u.full_name as user_name,
-        COALESCE(p_sum.total_paid, 0) AS amount_paid,
-        GREATEST(0, i.total_amount - COALESCE(p_sum.total_paid, 0)) AS balance_due,
-        CASE 
-          WHEN i.due_date < CURRENT_DATE AND i.payment_status != 'Paid' THEN true 
-          ELSE false 
-        END AS is_overdue,
-        CASE 
-          WHEN i.due_date < CURRENT_DATE AND i.payment_status != 'Paid' THEN (CURRENT_DATE - i.due_date::date)
-          ELSE 0 
-        END AS days_overdue
+      `SELECT i.*, c.customer_name, c.email as customer_email, u.full_name as user_name 
        FROM invoices i
        LEFT JOIN customers c ON i.customer_id = c.customer_id
        LEFT JOIN users u ON i.user_id = u.user_id
-       LEFT JOIN (
-         SELECT invoice_id, SUM(amount_paid) AS total_paid
-         FROM payments
-         WHERE payment_status = 'Completed'
-         GROUP BY invoice_id
-       ) p_sum ON i.invoice_id = p_sum.invoice_id
        WHERE i.invoice_id = $1`,
       [id]
     );
@@ -357,28 +248,8 @@ exports.getInvoiceById = async (req, res) => {
       [id]
     );
 
-    const paymentsRes = await pool.query(
-      `SELECT * FROM payments WHERE invoice_id = $1 ORDER BY payment_id DESC`,
-      [id]
-    );
-
     const invoice = invoiceRes.rows[0];
-    invoice.subtotal = parseFloat(invoice.subtotal);
-    invoice.tax = parseFloat(invoice.tax);
-    invoice.discount = parseFloat(invoice.discount);
-    invoice.total_amount = parseFloat(invoice.total_amount);
-    invoice.amount_paid = parseFloat(invoice.amount_paid);
-    invoice.balance_due = parseFloat(invoice.balance_due);
-    invoice.days_overdue = parseInt(invoice.days_overdue, 10);
-    invoice.items = itemsRes.rows.map(item => ({
-      ...item,
-      unit_price: parseFloat(item.unit_price),
-      subtotal: parseFloat(item.subtotal)
-    }));
-    invoice.payments = paymentsRes.rows.map(pay => ({
-      ...pay,
-      amount_paid: parseFloat(pay.amount_paid)
-    }));
+    invoice.items = itemsRes.rows;
 
     return res.status(200).json({
       success: true,
@@ -400,7 +271,7 @@ exports.updateInvoice = async (req, res) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
-    const { due_date, notes, tax, discount, payment_status } = req.body;
+    const { due_date, notes, tax, discount } = req.body;
 
     const numInvoiceId = parseInt(id, 10);
     if (isNaN(numInvoiceId) || numInvoiceId <= 0) {
@@ -466,8 +337,8 @@ exports.updateInvoice = async (req, res) => {
       throw err;
     }
 
-    // Auto calculate payment status unless explicitly overridden and valid
-    let updatedPaymentStatus = payment_status || invoice.payment_status || "Unpaid";
+    // Auto calculate payment status
+    let updatedPaymentStatus = "Unpaid";
     if (totalCompleted >= total_amount - 0.005) {
       updatedPaymentStatus = "Paid";
     } else if (totalCompleted > 0.005) {
@@ -496,7 +367,6 @@ exports.updateInvoice = async (req, res) => {
 
     const statusCode = error.statusCode || 500;
     const message = error.message || "Failed to update invoice";
-
 
     return res.status(statusCode).json({
       success: false,

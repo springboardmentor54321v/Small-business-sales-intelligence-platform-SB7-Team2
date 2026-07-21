@@ -13,6 +13,7 @@ const reportRoutes = require("./routes/reportRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const invoiceRoutes = require("./routes/invoiceRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const { activityLogger } = require("./middleware/activityLogger");
 
 const app = express();
 
@@ -28,6 +29,9 @@ app.use(morgan("dev"));
 // Body Parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Activity & Security Event Logger
+app.use(activityLogger);
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/inventory", inventoryRoutes);

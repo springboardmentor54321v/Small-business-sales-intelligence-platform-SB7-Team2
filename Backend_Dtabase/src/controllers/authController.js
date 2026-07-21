@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const generateToken = require("../utils/generateToken");
 const { pool } = require("../config/db");
+const { logSecurityEvent } = require("../middleware/activityLogger");
 
 // Register User
 const registerUser = async (req, res) => {
@@ -52,8 +53,10 @@ const registerUser = async (req, res) => {
 
 // Login User
 const loginUser = async (req, res) => {
-  try {
+  const clientIp = (req.headers["x-forwarded-for"] || req.ip || req.socket.remoteAddress || "").split(",")[0].trim();
+  const endpoint = req.originalUrl || req.url;
 
+  try {
     const { email, password } = req.body;
 
     const result = await pool.query(
@@ -62,6 +65,15 @@ const loginUser = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      logSecurityEvent({
+        endpoint,
+        httpMethod: req.method,
+        responseStatus: 401,
+        clientIp,
+        eventType: "LOGIN_FAILURE",
+        details: `Login failed for non-existent email: ${email}`
+      }).catch(err => console.error("Error logging LOGIN_FAILURE:", err.message));
+
       return res.status(401).json({
         success: false,
         message: "Invalid email or password",
@@ -73,6 +85,16 @@ const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+      logSecurityEvent({
+        userId: user.user_id,
+        endpoint,
+        httpMethod: req.method,
+        responseStatus: 401,
+        clientIp,
+        eventType: "LOGIN_FAILURE",
+        details: `Login failed due to invalid password for user_id: ${user.user_id}`
+      }).catch(err => console.error("Error logging LOGIN_FAILURE:", err.message));
+
       return res.status(401).json({
         success: false,
         message: "Invalid email or password",
@@ -83,6 +105,16 @@ const loginUser = async (req, res) => {
       id: user.user_id,
       role: user.role_id,
     });
+
+    logSecurityEvent({
+      userId: user.user_id,
+      endpoint,
+      httpMethod: req.method,
+      responseStatus: 200,
+      clientIp,
+      eventType: "LOGIN_SUCCESS",
+      details: `User ${user.user_id} (${user.email}) logged in successfully`
+    }).catch(err => console.error("Error logging LOGIN_SUCCESS:", err.message));
 
     res.status(200).json({
       success: true,
@@ -97,7 +129,6 @@ const loginUser = async (req, res) => {
     });
 
   } catch (error) {
-
     console.error(error);
 
     res.status(500).json({
