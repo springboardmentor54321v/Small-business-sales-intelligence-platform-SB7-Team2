@@ -91,13 +91,13 @@ WHERE EXISTS (SELECT 1 FROM invoices WHERE invoice_no = 'INV-2026-002')
   );
 
 -- 8. Insert 2 Payments
--- Payment 1 for Invoice 1: Partial payment of 50.00
+-- Payment 1 for Invoice 1: Partial payment received of 50.00
 INSERT INTO payments (invoice_id, amount_paid, payment_method, payment_status, transaction_reference, remarks)
 SELECT 
     (SELECT invoice_id FROM invoices WHERE invoice_no = 'INV-2026-001' LIMIT 1),
     50.00,
     'Credit Card',
-    'Success',
+    'Completed',
     'TXN-998877',
     'Partial payment received online'
 WHERE EXISTS (SELECT 1 FROM invoices WHERE invoice_no = 'INV-2026-001')
@@ -111,7 +111,7 @@ SELECT
     (SELECT invoice_id FROM invoices WHERE invoice_no = 'INV-2026-002' LIMIT 1),
     165.00,
     'Bank Transfer',
-    'Success',
+    'Completed',
     'TXN-665544',
     'Full payment received'
 WHERE EXISTS (SELECT 1 FROM invoices WHERE invoice_no = 'INV-2026-002')
