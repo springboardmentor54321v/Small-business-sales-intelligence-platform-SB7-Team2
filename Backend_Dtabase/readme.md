@@ -31,3 +31,24 @@ Backend REST API service built with Node.js, Express.js, and PostgreSQL / Supaba
   "thisMonthCollection": 215.00
 }
 ```
+
+### Dashboard Analytics Module (`/api/dashboard`)
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/dashboard` | Main dashboard summary & analytics | Yes |
+| `GET` | `/api/dashboard/monthly-revenue` | Monthly revenue trend breakdown | Yes |
+| `GET` | `/api/dashboard/top-selling` | Top selling products by quantity and revenue | Yes |
+| `GET` | `/api/dashboard/low-stock` | Low stock inventory alert list | Yes |
+| `GET` | `/api/dashboard/recent-invoices` | Recent invoices list | Yes |
+| `GET` | `/api/dashboard/customer-stats` | Customer metrics (total, new, active, top spenders) | Yes |
+
+### Reports & Business Intelligence Module (`/api/reports`)
+
+| Method | Endpoint | Description | Date Range Filter | Auth |
+|---|---|---|---|---|
+| `GET` | `/api/reports/sales` | Sales report with total sales, AOV, status counts | Yes (`start_date`, `end_date`) | Yes |
+| `GET` | `/api/reports/revenue` | Revenue report with payment method breakdown & totals | Yes (`start_date`, `end_date`) | Yes |
+| `GET` | `/api/reports/customers` | Customer report with total spent & order counts | Yes (`start_date`, `end_date`) | Yes |
+| `GET` | `/api/reports/products` | Product sales performance & inventory valuation | No | Yes |
+| `GET` | `/api/reports/inventory` | Alias for Product & Inventory Report | No | Yes |

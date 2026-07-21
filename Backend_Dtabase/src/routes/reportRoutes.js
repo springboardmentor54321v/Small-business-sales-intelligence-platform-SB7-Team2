@@ -7,6 +7,7 @@ const express = require("express");
 const {
   getSalesReport,
   getInventoryReport,
+  getProductReport,
   getCustomersReport,
   getRevenueReport,
   getCustomerGroups,
@@ -26,6 +27,7 @@ router.use(protect);
 // Standard Reports
 router.get("/sales", getSalesReport);
 router.get("/inventory", getInventoryReport);
+router.get("/products", getProductReport);
 router.get("/customers", getCustomersReport);
 router.get("/revenue", getRevenueReport);
 

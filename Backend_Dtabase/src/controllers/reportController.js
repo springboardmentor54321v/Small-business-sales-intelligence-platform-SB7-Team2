@@ -1,7 +1,13 @@
+// ==========================================
+// MarketMind AI - Report Controller
+// Module: Reporting & Business Intelligence
+// ==========================================
+
 const { pool } = require("../config/db");
 
-// Helper function to format timestamp/date to YYYY-MM-DD
+// Helper function to format timestamp/date to YYYY-MM-DD ISO string
 const formatDate = (dateVal) => {
+  if (!dateVal) return null;
   if (dateVal instanceof Date) {
     const year = dateVal.getFullYear();
     const month = String(dateVal.getMonth() + 1).padStart(2, '0');
@@ -15,40 +21,105 @@ const formatDate = (dateVal) => {
 };
 
 /**
- * Get Sales Report
+ * Get Sales Report (with Date Range Filtering, Summary Statistics & Export Format)
  * @route GET /api/reports/sales
  * @access Private
  */
 exports.getSalesReport = async (req, res) => {
   try {
-    const result = await pool.query(`
+    const { start_date, end_date, payment_status } = req.query;
+
+    let whereClauses = [];
+    let queryParams = [];
+    let paramIndex = 1;
+
+    if (start_date) {
+      whereClauses.push(`st.sale_date >= $${paramIndex}`);
+      queryParams.push(start_date);
+      paramIndex++;
+    }
+
+    if (end_date) {
+      whereClauses.push(`st.sale_date <= $${paramIndex}::timestamp + INTERVAL '1 day'`);
+      queryParams.push(end_date);
+      paramIndex++;
+    }
+
+    if (payment_status) {
+      whereClauses.push(`st.payment_status = $${paramIndex}`);
+      queryParams.push(payment_status);
+      paramIndex++;
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // 1. Fetch Sales Transactions Data
+    const salesQuery = `
       SELECT 
         st.sale_id,
         st.invoice_no,
+        st.customer_id,
         c.customer_name,
+        st.total_amount,
         st.payment_method,
         st.payment_status,
-        st.total_amount,
         st.sale_date
       FROM sales_transactions st
-      JOIN customers c ON st.customer_id = c.customer_id
+      LEFT JOIN customers c ON st.customer_id = c.customer_id
+      ${whereSql}
       ORDER BY st.sale_date DESC, st.sale_id DESC
-    `);
+    `;
 
-    const sales = result.rows.map(row => ({
+    const salesResult = await pool.query(salesQuery, queryParams);
+
+    // 2. Fetch Summary Statistics
+    const summaryQuery = `
+      SELECT 
+        COALESCE(SUM(st.total_amount), 0) AS total_sales_amount,
+        COALESCE(AVG(st.total_amount), 0) AS average_sale_amount,
+        COUNT(st.sale_id) AS total_sales_count,
+        COALESCE(SUM(CASE WHEN st.payment_status = 'Paid' THEN 1 ELSE 0 END), 0) AS paid_count,
+        COALESCE(SUM(CASE WHEN st.payment_status = 'Unpaid' THEN 1 ELSE 0 END), 0) AS unpaid_count,
+        COALESCE(SUM(CASE WHEN st.payment_status = 'Pending' THEN 1 ELSE 0 END), 0) AS pending_count
+      FROM sales_transactions st
+      ${whereSql}
+    `;
+
+    const summaryResult = await pool.query(summaryQuery, queryParams);
+    const summaryRow = summaryResult.rows[0];
+
+    const salesData = salesResult.rows.map(row => ({
       sale_id: row.sale_id,
       invoice_no: row.invoice_no,
+      customer_id: row.customer_id,
       customer_name: row.customer_name,
       payment_method: row.payment_method,
       payment_status: row.payment_status,
-      total_amount: Number(row.total_amount),
+      total_amount: parseFloat(row.total_amount),
       sale_date: formatDate(row.sale_date)
     }));
 
     return res.status(200).json({
       success: true,
-      sales
+      report_type: "Sales Report",
+      metadata: {
+        generated_at: new Date().toISOString(),
+        start_date: start_date || null,
+        end_date: end_date || null,
+        payment_status_filter: payment_status || "All",
+        total_records: salesData.length
+      },
+      summary: {
+        totalSalesAmount: parseFloat(summaryRow.total_sales_amount),
+        averageSaleAmount: parseFloat(summaryRow.average_sale_amount),
+        totalSalesCount: parseInt(summaryRow.total_sales_count, 10),
+        paidCount: parseInt(summaryRow.paid_count, 10),
+        unpaidCount: parseInt(summaryRow.unpaid_count, 10),
+        pendingCount: parseInt(summaryRow.pending_count, 10)
+      },
+      data: salesData
     });
+
   } catch (error) {
     console.error("Error fetching sales report:", error);
     return res.status(500).json({
@@ -59,79 +130,208 @@ exports.getSalesReport = async (req, res) => {
 };
 
 /**
- * Get Inventory Report
- * @route GET /api/reports/inventory
+ * Get Revenue Report (with Date Range Filtering, Payment Method Breakdown & Summary Statistics)
+ * @route GET /api/reports/revenue
  * @access Private
  */
-exports.getInventoryReport = async (req, res) => {
+exports.getRevenueReport = async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        i.inventory_id,
-        p.product_name,
-        i.stock_quantity,
-        i.reorder_level,
-        i.warehouse_location,
-        i.last_updated
-      FROM inventory i
-      JOIN products p ON i.product_id = p.product_id
-      ORDER BY p.product_name ASC
-    `);
+    const { start_date, end_date } = req.query;
 
-    const inventory = result.rows.map(row => ({
-      inventory_id: row.inventory_id,
-      product_name: row.product_name,
-      stock_quantity: parseInt(row.stock_quantity, 10),
-      reorder_level: parseInt(row.reorder_level, 10),
-      warehouse_location: row.warehouse_location,
-      last_updated: formatDate(row.last_updated)
+    let whereClauses = ["p.payment_status = 'Completed'"];
+    let queryParams = [];
+    let paramIndex = 1;
+
+    if (start_date) {
+      whereClauses.push(`p.payment_date >= $${paramIndex}`);
+      queryParams.push(start_date);
+      paramIndex++;
+    }
+
+    if (end_date) {
+      whereClauses.push(`p.payment_date <= $${paramIndex}::timestamp + INTERVAL '1 day'`);
+      queryParams.push(end_date);
+      paramIndex++;
+    }
+
+    const whereSql = `WHERE ${whereClauses.join(" AND ")}`;
+
+    // 1. Fetch Revenue Summary Statistics
+    const summaryQuery = `
+      SELECT 
+        COALESCE(SUM(p.amount_paid), 0) AS total_revenue,
+        COALESCE(AVG(p.amount_paid), 0) AS average_payment,
+        COALESCE(MAX(p.amount_paid), 0) AS highest_payment,
+        COALESCE(MIN(p.amount_paid), 0) AS lowest_payment,
+        COUNT(p.payment_id) AS total_payments_count
+      FROM payments p
+      ${whereSql}
+    `;
+
+    // 2. Fetch Payment Method Breakdown
+    const breakdownQuery = `
+      SELECT 
+        COALESCE(p.payment_method, 'Unspecified') AS payment_method,
+        COALESCE(SUM(p.amount_paid), 0) AS method_total,
+        COUNT(p.payment_id) AS transaction_count
+      FROM payments p
+      ${whereSql}
+      GROUP BY p.payment_method
+      ORDER BY method_total DESC
+    `;
+
+    // 3. Fetch Transaction List
+    const dataQuery = `
+      SELECT 
+        p.payment_id,
+        p.invoice_id,
+        i.invoice_no,
+        c.customer_name,
+        p.amount_paid,
+        p.payment_method,
+        p.transaction_reference,
+        p.payment_date
+      FROM payments p
+      LEFT JOIN invoices i ON p.invoice_id = i.invoice_id
+      LEFT JOIN customers c ON i.customer_id = c.customer_id
+      ${whereSql}
+      ORDER BY p.payment_date DESC
+    `;
+
+    const [summaryRes, breakdownRes, dataRes] = await Promise.all([
+      pool.query(summaryQuery, queryParams),
+      pool.query(breakdownQuery, queryParams),
+      pool.query(dataQuery, queryParams)
+    ]);
+
+    const summaryRow = summaryRes.rows[0];
+
+    const paymentMethodBreakdown = breakdownRes.rows.map(row => ({
+      payment_method: row.payment_method,
+      total_amount: parseFloat(row.method_total),
+      transaction_count: parseInt(row.transaction_count, 10)
+    }));
+
+    const transactions = dataRes.rows.map(row => ({
+      payment_id: row.payment_id,
+      invoice_id: row.invoice_id,
+      invoice_no: row.invoice_no,
+      customer_name: row.customer_name,
+      amount_paid: parseFloat(row.amount_paid),
+      payment_method: row.payment_method,
+      transaction_reference: row.transaction_reference,
+      payment_date: formatDate(row.payment_date)
     }));
 
     return res.status(200).json({
       success: true,
-      inventory
+      report_type: "Revenue Report",
+      metadata: {
+        generated_at: new Date().toISOString(),
+        start_date: start_date || null,
+        end_date: end_date || null,
+        total_records: transactions.length
+      },
+      summary: {
+        totalRevenue: parseFloat(summaryRow.total_revenue),
+        averagePayment: parseFloat(summaryRow.average_payment),
+        highestPayment: parseFloat(summaryRow.highest_payment),
+        lowestPayment: parseFloat(summaryRow.lowest_payment),
+        totalPaymentsCount: parseInt(summaryRow.total_payments_count, 10)
+      },
+      paymentMethodBreakdown,
+      data: transactions
     });
+
   } catch (error) {
-    console.error("Error fetching inventory report:", error);
+    console.error("Error fetching revenue report:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch inventory report"
+      message: "Failed to fetch revenue report"
     });
   }
 };
 
 /**
- * Get Customers Report
+ * Get Customers Report (with Date Range Filtering, Spend Aggregation & Summary Statistics)
  * @route GET /api/reports/customers
  * @access Private
  */
 exports.getCustomersReport = async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        customer_id,
-        customer_name,
-        email,
-        phone,
-        address,
-        created_at
-      FROM customers
-      ORDER BY customer_name ASC
-    `);
+    const { start_date, end_date } = req.query;
 
-    const customers = result.rows.map(row => ({
+    let whereClauses = [];
+    let queryParams = [];
+    let paramIndex = 1;
+
+    if (start_date) {
+      whereClauses.push(`c.created_at >= $${paramIndex}`);
+      queryParams.push(start_date);
+      paramIndex++;
+    }
+
+    if (end_date) {
+      whereClauses.push(`c.created_at <= $${paramIndex}::timestamp + INTERVAL '1 day'`);
+      queryParams.push(end_date);
+      paramIndex++;
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    const query = `
+      SELECT 
+        c.customer_id,
+        c.customer_name,
+        c.email,
+        c.phone,
+        c.address,
+        c.created_at,
+        COALESCE(SUM(i.total_amount), 0) AS total_spent,
+        COUNT(i.invoice_id) AS total_invoices
+      FROM customers c
+      LEFT JOIN invoices i ON c.customer_id = i.customer_id
+      ${whereSql}
+      GROUP BY c.customer_id, c.customer_name, c.email, c.phone, c.address, c.created_at
+      ORDER BY total_spent DESC, c.customer_name ASC
+    `;
+
+    const result = await pool.query(query, queryParams);
+
+    const customersData = result.rows.map(row => ({
       customer_id: row.customer_id,
       customer_name: row.customer_name,
       email: row.email,
       phone: row.phone,
       address: row.address,
-      created_at: formatDate(row.created_at)
+      created_at: formatDate(row.created_at),
+      total_spent: parseFloat(row.total_spent),
+      total_invoices: parseInt(row.total_invoices, 10)
     }));
+
+    const totalCustomers = customersData.length;
+    const activeCustomers = customersData.filter(c => c.total_invoices > 0).length;
+    const totalCustomerSpend = customersData.reduce((sum, c) => sum + c.total_spent, 0);
+    const averageSpendPerCustomer = totalCustomers > 0 ? totalCustomerSpend / totalCustomers : 0;
 
     return res.status(200).json({
       success: true,
-      customers
+      report_type: "Customer Report",
+      metadata: {
+        generated_at: new Date().toISOString(),
+        start_date: start_date || null,
+        end_date: end_date || null,
+        total_records: totalCustomers
+      },
+      summary: {
+        totalCustomers,
+        activeCustomers,
+        totalCustomerSpend: parseFloat(totalCustomerSpend.toFixed(2)),
+        averageSpendPerCustomer: parseFloat(averageSpendPerCustomer.toFixed(2))
+      },
+      data: customersData
     });
+
   } catch (error) {
     console.error("Error fetching customers report:", error);
     return res.status(500).json({
@@ -142,40 +342,79 @@ exports.getCustomersReport = async (req, res) => {
 };
 
 /**
- * Get Revenue Report
- * @route GET /api/reports/revenue
+ * Get Product & Inventory Report
+ * @route GET /api/reports/products or /api/reports/inventory
  * @access Private
  */
-exports.getRevenueReport = async (req, res) => {
+exports.getProductReport = async (req, res) => {
   try {
-    const result = await pool.query(`
+    const query = `
       SELECT 
-        COALESCE(SUM(total_amount), 0) AS total_revenue,
-        COALESCE(AVG(total_amount), 0) AS average_sale,
-        COALESCE(MAX(total_amount), 0) AS highest_sale,
-        COALESCE(MIN(total_amount), 0) AS lowest_sale
-      FROM sales_transactions
-    `);
+        p.product_id,
+        p.product_name,
+        c.category_name,
+        p.price,
+        COALESCE(i.stock_quantity, 0) AS stock_quantity,
+        COALESCE(i.reorder_level, 10) AS reorder_level,
+        COALESCE(i.warehouse_location, 'Default') AS warehouse_location,
+        COALESCE(SUM(ii.quantity), 0) AS total_units_sold,
+        COALESCE(SUM(ii.subtotal), 0) AS total_revenue_generated,
+        (p.price * COALESCE(i.stock_quantity, 0)) AS inventory_value
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN inventory i ON p.product_id = i.product_id
+      LEFT JOIN invoice_items ii ON p.product_id = ii.product_id
+      GROUP BY p.product_id, p.product_name, c.category_name, p.price, i.stock_quantity, i.reorder_level, i.warehouse_location
+      ORDER BY total_units_sold DESC, p.product_name ASC
+    `;
 
-    const row = result.rows[0];
+    const result = await pool.query(query);
+
+    const productsData = result.rows.map(row => ({
+      product_id: row.product_id,
+      product_name: row.product_name,
+      category_name: row.category_name,
+      price: parseFloat(row.price),
+      stock_quantity: parseInt(row.stock_quantity, 10),
+      reorder_level: parseInt(row.reorder_level, 10),
+      warehouse_location: row.warehouse_location,
+      total_units_sold: parseInt(row.total_units_sold, 10),
+      total_revenue_generated: parseFloat(row.total_revenue_generated),
+      inventory_value: parseFloat(row.inventory_value)
+    }));
+
+    const totalProducts = productsData.length;
+    const totalStockQuantity = productsData.reduce((sum, p) => sum + p.stock_quantity, 0);
+    const totalInventoryValue = productsData.reduce((sum, p) => sum + p.inventory_value, 0);
+    const lowStockCount = productsData.filter(p => p.stock_quantity <= p.reorder_level).length;
 
     return res.status(200).json({
       success: true,
-      report: {
-        totalRevenue: Number(row.total_revenue),
-        averageSale: Number(row.average_sale),
-        highestSale: Number(row.highest_sale),
-        lowestSale: Number(row.lowest_sale)
-      }
+      report_type: "Product & Inventory Report",
+      metadata: {
+        generated_at: new Date().toISOString(),
+        total_records: totalProducts
+      },
+      summary: {
+        totalProducts,
+        totalStockQuantity,
+        totalInventoryValue: parseFloat(totalInventoryValue.toFixed(2)),
+        lowStockCount
+      },
+      data: productsData
     });
+
   } catch (error) {
-    console.error("Error fetching revenue report:", error);
+    console.error("Error fetching product report:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch revenue report"
+      message: "Failed to fetch product report"
     });
   }
 };
+
+// Alias for Inventory Report
+exports.getInventoryReport = exports.getProductReport;
 
 /**
  * Get AI Customer Groups / Segmentation
