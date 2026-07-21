@@ -14,6 +14,7 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const invoiceRoutes = require("./routes/invoiceRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const { activityLogger } = require("./middleware/activityLogger");
+const { apiLimiter } = require("./middleware/rateLimiter");
 
 const app = express();
 
@@ -32,16 +33,18 @@ app.use(express.urlencoded({ extended: true }));
 
 // Activity & Security Event Logger
 app.use(activityLogger);
-app.use("/api/admin", adminRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/inventory", inventoryRoutes);
-app.use("/api/customers", customerRoutes);
-app.use("/api/sales", salesRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/reports", reportRoutes);
-app.use("/api/upload", uploadRoutes);
-app.use("/api/invoices", invoiceRoutes);
-app.use("/api/payments", paymentRoutes);
+
+// Apply Moderate Rate Limiter to Business APIs
+app.use("/api/admin", apiLimiter, adminRoutes);
+app.use("/api/products", apiLimiter, productRoutes);
+app.use("/api/inventory", apiLimiter, inventoryRoutes);
+app.use("/api/customers", apiLimiter, customerRoutes);
+app.use("/api/sales", apiLimiter, salesRoutes);
+app.use("/api/dashboard", apiLimiter, dashboardRoutes);
+app.use("/api/reports", apiLimiter, reportRoutes);
+app.use("/api/upload", apiLimiter, uploadRoutes);
+app.use("/api/invoices", apiLimiter, invoiceRoutes);
+app.use("/api/payments", apiLimiter, paymentRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
