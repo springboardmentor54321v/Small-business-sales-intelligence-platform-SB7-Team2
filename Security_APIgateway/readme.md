@@ -1,73 +1,58 @@
 # MarketMind AI - Security & API Gateway Module
 
-## 1. Project Overview
-**MarketMind AI** is a comprehensive, state-of-the-art Sales Intelligence Platform engineered specifically for small businesses. It empowers business owners and store managers to make data-driven decisions by providing real-time data insights, automated invoicing, secure payment systems, inventory tracking, and predictive AI reporting.
+Production-ready **API Gateway & Security Architecture** for MarketMind AI built on OWASP API Security best practices.
 
 ---
 
-## 2. Security Module Overview
-The **Security & API Gateway** module serves as the primary firewall and guardrail for the MarketMind AI backend. It guarantees that:
-1. Only authenticated clients can reach internal server endpoints (**Authentication**).
-2. Authenticated users can only call endpoints that correspond to their organizational roles (**Authorization / RBAC**).
-3. Payload inputs are sanitised and structurally validated *before* reaching the database query layers, preventing database injection, type errors, or arithmetic vulnerabilities (**Joi Request Validation**).
-
----
-
-## 3. Folder Structure of Security Components
+## 1. Gateway Security Layers
 
 ```text
-Backend_Dtabase/
-├── src/
-│   ├── middleware/
-│   │   ├── authMiddleware.js        # Parses and validates Bearer JWT tokens
-│   │   ├── roleMiddleware.js        # Evaluates RBAC permissions dynamically
-│   │   └── validationMiddleware.js  # Joi schemas and validation pipeline
-│   ├── routes/
-│   │   ├── invoiceRoutes.js         # Protects invoice CRUD, validates inputs
-│   │   ├── paymentRoutes.js         # Protects payments records, validates inputs
-│   │   └── reportRoutes.js          # Restricts AI report access based on RBAC
-│   └── utils/
-│       └── generateToken.js         # Generates JWT signature payloads
+Incoming Client Request
+         │
+         ├──> 1. Helmet HTTP Security Headers (HSTS, CSP, Frameguard, NoSniff)
+         ├──> 2. Strict CORS Origin Whitelist Filter
+         ├──> 3. Body Parser Payload Size Limiter (10KB Max)
+         ├──> 4. Activity & Security Event Audit Logger (PostgreSQL activity_logs)
+         ├──> 5. Global Input Sanitizer (XSS, SQLi & NoSQLi Defense)
+         ├──> 6. Express Rate Limiters (Strict 5 req/15min | Moderate 100 req/15min)
+         ├──> 7. JWT Authentication (HS256 Algorithm Restricted)
+         ├──> 8. Role-Based Access Control (RBAC Authorization)
+         └──> 9. Centralized Error Handler (Uniform JSON Error Format)
 ```
 
 ---
 
-## 4. Technologies Used
-* **Node.js & Express.js:** Scalable execution environment and web application framework.
-* **JSON Web Tokens (JWT):** Lightweight, stateless client credential transmission format.
-* **Bcrypt:** Secure cryptographic password hashing technique.
-* **Joi (v18.2.3):** Powerful schema description language and validator for JavaScript objects.
-* **PostgreSQL:** ACID-compliant relational database management system.
+## 2. Key Security Features
+
+### A. Helmet Secure HTTP Headers
+* **HSTS**: Forces HTTPS with `maxAge: 31536000` (1 year).
+* **Clickjacking Defense**: `X-Frame-Options: DENY`.
+* **MIME Sniffing Defense**: `X-Content-Type-Options: nosniff`.
+* **XSS Defense**: `X-XSS-Protection: 1; mode=block`.
+* **Information Concealment**: `X-Powered-By` hidden.
+
+### B. Input Sanitization (`sanitizerMiddleware.js`)
+* **XSS Protection**: Automatically strips `<script>` tags, HTML markup, `javascript:` URIs, and event attributes (`onload=`, `onerror=`) across `req.body`, `req.query`, and `req.params`.
+* **SQL Injection Protection**: Detects SQLi signatures (`UNION SELECT`, `' OR 1=1`, `DROP TABLE`). Rejects with HTTP 400 Bad Request.
+* **NoSQL / Prototype Pollution**: Strips `$operator` keys and `__proto__`, `constructor`, `prototype`.
+
+### C. Rate Limiting (`rateLimiter.js`)
+* **Auth Limiter**: 5 requests / 15 minutes on `/api/auth/login` and `/register`. Returns HTTP 429.
+* **API Limiter**: 100 requests / 15 minutes on business routes. Returns HTTP 429.
+
+### D. Activity & Security Event Audit Logging (`activityLogger.js`)
+* Non-blocking, asynchronous execution capturing response status, client IP, execution duration, and event types (`LOGIN_SUCCESS`, `LOGIN_FAILURE`, `AUTH_FAILURE`, `ACCESS_FORBIDDEN`).
+* Sensitive data (passwords, tokens) is scrubbed automatically before writing to `activity_logs`.
 
 ---
 
-## 5. System Flow Architectures
+## 3. Environment Configuration Guide
 
-### A. Authentication Flow (JWT)
-1. The client logs in by sending an email and password to `/api/auth/login`.
-2. The server verifies credentials against PostgreSQL and generates a signed JWT payload containing the user's ID and role ID.
-3. The client receives the JWT token and caches it.
-4. For all protected requests, the client attaches the header `Authorization: Bearer <JWT_TOKEN>`.
-5. The `protect` middleware decodes and verifies the signature, attaching the payload to `req.user`.
+Ensure the following variables are defined in `.env`:
 
-### B. Authorization Flow (RBAC)
-```mermaid
-graph TD
-    A[Client Request] --> B[protect Middleware]
-    B -->|Valid Token| C[authorizeRoles Middleware]
-    B -->|Invalid/Missing Token| D[401 Unauthorized]
-    C -->|Role is authorized in database| E[Controller Business Logic]
-    C -->|Role lacks permission| F[403 Forbidden]
+```env
+PORT=5000
+NODE_ENV=production
+JWT_SECRET=your_super_secret_jwt_key_256bit
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 ```
-
-### C. Request Validation Flow (Joi)
-1. The request payload (body or parameter) reaches the route.
-2. The `validateBody(schema)` or `validateParams(schema)` middleware intercept it.
-3. Joi executes structural validation against the preset schema definitions.
-4. If validation fails, Express aborts the process immediately and returns a standardized `400 Bad Request` containing a detailed array of all failed fields.
-5. If validation passes, the request proceeds safely to the controller.
-
----
-
-## 6. Conclusion
-By decoupling the security architecture into distinct, reusable middlewares (`protect`, `authorizeRoles`, `validateBody`), MarketMind AI maintains a clean separation of concerns. This ensures developer agility, prevents code repetition, and guarantees enterprise-grade security for small business data.
