@@ -458,3 +458,51 @@ exports.deleteInvoice = async (req, res) => {
   }
 };
 
+/**
+ * Revenue Summary API
+ * @route GET /api/invoices/revenue-summary
+ * @access Private
+ */
+exports.getRevenueSummary = async (req, res) => {
+  try {
+    const summaryQuery = `
+      SELECT 
+        COALESCE((SELECT SUM(amount_paid) FROM payments WHERE payment_status = 'Completed'), 0) +
+        COALESCE((SELECT SUM(total_amount) FROM sales_transactions WHERE payment_status = 'Paid'), 0) AS total_revenue,
+        
+        COALESCE((SELECT COUNT(*) FROM invoices), 0) AS total_invoices,
+        COALESCE((SELECT COUNT(*) FROM invoices WHERE payment_status = 'Paid'), 0) AS paid_invoices,
+        COALESCE((SELECT COUNT(*) FROM invoices WHERE payment_status = 'Unpaid'), 0) AS unpaid_invoices,
+        COALESCE((SELECT COUNT(*) FROM invoices WHERE payment_status = 'Partial'), 0) AS partial_invoices,
+        
+        COALESCE((SELECT SUM(total_amount) FROM invoices), 0) - 
+        COALESCE((SELECT SUM(amount_paid) FROM payments WHERE payment_status = 'Completed'), 0) AS total_outstanding,
+        
+        COALESCE((SELECT SUM(amount_paid) FROM payments WHERE payment_status = 'Completed' AND DATE(payment_date) = CURRENT_DATE), 0) AS today_collection,
+        COALESCE((SELECT SUM(amount_paid) FROM payments WHERE payment_status = 'Completed' AND DATE_TRUNC('month', payment_date) = DATE_TRUNC('month', CURRENT_DATE)), 0) AS this_month_collection
+    `;
+
+    const result = await pool.query(summaryQuery);
+    const row = result.rows[0];
+
+    return res.status(200).json({
+      success: true,
+      message: "Revenue summary calculated successfully",
+      totalRevenue: parseFloat(row.total_revenue),
+      totalInvoices: parseInt(row.total_invoices, 10),
+      paidInvoices: parseInt(row.paid_invoices, 10),
+      unpaidInvoices: parseInt(row.unpaid_invoices, 10),
+      partialInvoices: parseInt(row.partial_invoices, 10),
+      totalOutstanding: Math.max(0, parseFloat(row.total_outstanding)),
+      todayCollection: parseFloat(row.today_collection),
+      thisMonthCollection: parseFloat(row.this_month_collection)
+    });
+  } catch (error) {
+    console.error("Error in getRevenueSummary:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to calculate revenue summary"
+    });
+  }
+};
+
