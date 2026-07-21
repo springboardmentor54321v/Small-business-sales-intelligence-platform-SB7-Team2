@@ -9,7 +9,8 @@ const {
   getInvoices,
   getInvoiceById,
   updateInvoice,
-  deleteInvoice
+  deleteInvoice,
+  getRevenueSummary
 } = require("../controllers/invoiceController");
 
 const protect = require("../middleware/authMiddleware");
@@ -17,8 +18,10 @@ const authorizeRoles = require("../middleware/roleMiddleware");
 const {
   validateBody,
   validateParams,
+  validateQuery,
   createInvoiceSchema,
   updateInvoiceSchema,
+  getInvoicesQuerySchema,
   idParamSchema
 } = require("../middleware/validationMiddleware");
 
@@ -26,6 +29,19 @@ const router = express.Router();
 
 // Apply protection middleware to all invoice routes
 router.use(protect);
+
+// Revenue Summary Routes (must be defined before /:id)
+router.get(
+  "/revenue-summary",
+  authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  getRevenueSummary
+);
+
+router.get(
+  "/summary",
+  authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  getRevenueSummary
+);
 
 // Invoice Routes with RBAC and Joi Validation
 router.post(
@@ -38,6 +54,7 @@ router.post(
 router.get(
   "/",
   authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  validateQuery(getInvoicesQuerySchema),
   getInvoices
 );
 

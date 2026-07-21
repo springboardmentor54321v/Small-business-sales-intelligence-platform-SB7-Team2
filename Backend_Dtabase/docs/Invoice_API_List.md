@@ -10,6 +10,7 @@ All routes are prefixed with `/api/invoices`.
 
 | Endpoint | Method | Description | Authentication Required | Roles Permitted |
 |---|---|---|---|---|
+| `/api/invoices/revenue-summary` | `GET` | Get overall revenue summary metrics directly from invoices & payments | Yes (JWT Bearer) | `Business Owner`, `Sales Executive`, `Store Manager`, `System Administrator` |
 | `/api/invoices` | `POST` | Create a new invoice and deduct stock | Yes (JWT Bearer) | `Business Owner`, `Sales Executive`, `System Administrator` |
 | `/api/invoices` | `GET` | Retrieve a list of all invoices | Yes (JWT Bearer) | `Business Owner`, `Sales Executive`, `Store Manager`, `System Administrator` |
 | `/api/invoices/:id` | `GET` | Retrieve details of a single invoice by ID | Yes (JWT Bearer) | `Business Owner`, `Sales Executive`, `Store Manager`, `System Administrator` |
@@ -20,7 +21,38 @@ All routes are prefixed with `/api/invoices`.
 
 ## 2. Endpoints Detail Specification
 
-### 1. Create Invoice
+### 1. Get Revenue Summary
+* **Endpoint:** `/api/invoices/revenue-summary` (also available at `/api/invoices/summary`)
+* **Method:** `GET`
+* **Description:** Calculates financial metrics directly from the `invoices` and `payments` PostgreSQL tables using aggregate SQL queries (`SUM`, `COUNT`, `COALESCE`, `GREATEST`).
+* **Authentication Required:** Yes (JWT)
+* **Permitted Roles:** `Business Owner`, `Sales Executive`, `Store Manager`, `System Administrator`
+
+#### Postman Example Request:
+**Headers:**
+```http
+Authorization: Bearer <JWT_TOKEN>
+```
+
+#### Postman Example Response (Status: `200 OK`):
+```json
+{
+  "success": true,
+  "message": "Revenue summary calculated successfully",
+  "totalRevenue": 215.00,
+  "totalInvoices": 2,
+  "paidInvoices": 1,
+  "unpaidInvoices": 0,
+  "partialInvoices": 1,
+  "totalOutstanding": 55.00,
+  "todayCollection": 215.00,
+  "thisMonthCollection": 215.00
+}
+```
+
+---
+
+### 2. Create Invoice
 * **Endpoint:** `/api/invoices`
 * **Method:** `POST`
 * **Description:** Initiates a PostgreSQL transaction to verify customer & products, checks and reduces inventory stock, generates an invoice number automatically, and stores the invoice.
@@ -97,17 +129,28 @@ Content-Type: application/json
 
 ---
 
-### 2. Get All Invoices
+### 3. Get All / Search / Filter Invoices
 * **Endpoint:** `/api/invoices`
 * **Method:** `GET`
-* **Description:** Retrieves all invoices sorted by `invoice_id` in descending order, including customer name and user (salesperson) name.
+* **Description:** Retrieves all invoices sorted by `invoice_id` in descending order. Supports searching by invoice number or customer name, filtering by payment status (`Paid`, `Unpaid`, `Partial`, `Overdue`), customer ID, date range, and overdue flag. Also returns calculated fields `amount_paid`, `balance_due`, `is_overdue`, and `days_overdue`.
 * **Authentication Required:** Yes (JWT)
 * **Permitted Roles:** `Business Owner`, `Sales Executive`, `Store Manager`, `System Administrator`
+
+#### Supported Query Parameters:
+* `search` (String, Optional) - Search term matching `invoice_no` or `customer_name`. (e.g. `?search=INV-2026`)
+* `payment_status` / `status` (String, Optional) - Filter by `Paid`, `Unpaid`, `Partial`, or `Overdue`.
+* `customer_id` (Integer, Optional) - Filter invoices by customer ID.
+* `start_date` / `end_date` (ISO Date string, Optional) - Filter invoices within an invoice date range.
+* `overdue` (Boolean, Optional) - Filter overdue invoices when set to `true`.
 
 #### Postman Example Request:
 **Headers:**
 ```http
 Authorization: Bearer <JWT_TOKEN>
+```
+**URL with Filters:**
+```http
+GET /api/invoices?search=INV&payment_status=Unpaid&overdue=true
 ```
 
 #### Postman Example Response (Status: `200 OK`):
@@ -115,6 +158,7 @@ Authorization: Bearer <JWT_TOKEN>
 {
   "success": true,
   "message": "Invoices fetched successfully",
+  "count": 1,
   "invoices": [
     {
       "invoice_id": 5,
@@ -123,16 +167,20 @@ Authorization: Bearer <JWT_TOKEN>
       "user_id": 1,
       "invoice_date": "2026-07-16T13:00:00.000Z",
       "due_date": "2026-08-15T00:00:00.000Z",
-      "subtotal": "125.00",
-      "tax": "10.00",
-      "discount": "5.00",
-      "total_amount": "130.00",
+      "subtotal": 125.00,
+      "tax": 10.00,
+      "discount": 5.00,
+      "total_amount": 130.00,
       "payment_status": "Unpaid",
       "notes": "First invoice on the new platform.",
       "created_at": "2026-07-16T13:00:00.000Z",
       "updated_at": "2026-07-16T13:00:00.000Z",
       "customer_name": "Alice Smith",
-      "user_name": "Admin Test"
+      "user_name": "Admin Test",
+      "amount_paid": 0.00,
+      "balance_due": 130.00,
+      "is_overdue": false,
+      "days_overdue": 0
     }
   ]
 }

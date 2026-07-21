@@ -31,6 +31,32 @@ const validateBody = (schema) => {
 };
 
 /**
+ * Reusable Query Validator Middleware
+ * @param {Joi.ObjectSchema} schema Joi Schema object
+ */
+const validateQuery = (schema) => {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req.query, { abortEarly: false, allowUnknown: true });
+
+    if (error) {
+      const errorDetails = error.details.map((err) => ({
+        field: err.path.join("."),
+        message: err.message.replace(/['"]/g, "")
+      }));
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid query parameters",
+        errors: errorDetails
+      });
+    }
+
+    req.query = value;
+    next();
+  };
+};
+
+/**
  * Reusable Parameter Validator Middleware
  * @param {Joi.ObjectSchema} schema Joi Schema object
  */
@@ -53,6 +79,16 @@ const validateParams = (schema) => {
 // ----------------------------------------------------
 // 1. INVOICE SCHEMAS
 // ----------------------------------------------------
+
+const getInvoicesQuerySchema = Joi.object({
+  search: Joi.string().allow("").optional(),
+  payment_status: Joi.string().valid("Paid", "Unpaid", "Partial", "Overdue").allow("").optional(),
+  status: Joi.string().valid("Paid", "Unpaid", "Partial", "Overdue").allow("").optional(),
+  customer_id: Joi.number().integer().positive().optional(),
+  start_date: Joi.date().iso().optional(),
+  end_date: Joi.date().iso().optional(),
+  overdue: Joi.boolean().optional()
+});
 
 const createInvoiceSchema = Joi.object({
   customer_id: Joi.number().integer().positive().required().messages({
@@ -123,7 +159,10 @@ const updateInvoiceSchema = Joi.object({
     "number.base": "discount must be a number",
     "number.min": "discount cannot be negative"
   }),
-  notes: Joi.string().allow("").optional()
+  notes: Joi.string().allow("").optional(),
+  payment_status: Joi.string().valid("Paid", "Unpaid", "Partial").optional().messages({
+    "any.only": "payment_status must be one of: Paid, Unpaid, Partial"
+  })
 });
 
 // ----------------------------------------------------
@@ -186,6 +225,8 @@ const idParamSchema = Joi.object({
 module.exports = {
   validateBody,
   validateParams,
+  validateQuery,
+  getInvoicesQuerySchema,
   createInvoiceSchema,
   updateInvoiceSchema,
   createPaymentSchema,
