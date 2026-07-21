@@ -280,3 +280,160 @@ td {
 .card p {
   color: #d1d5db;
 }
+
+/* ========================= */
+/* Theme Toggle Button */
+/* ========================= */
+
+.theme-toggle {
+  width: 100%;
+  margin: 15px 0;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+  font-weight: bold;
+}
+
+/* ========================= */
+/* Dark Theme */
+/* ========================= */
+
+.app.dark {
+  background: #0f172a;
+  color: white;
+}
+
+.app.dark .sidebar {
+  background: #111827;
+  color: white;
+}
+
+.app.dark .main {
+  background: #0f172a;
+}
+
+.app.dark .card,
+.app.dark .panel {
+  background: #1e293b;
+  color: white;
+}
+
+/* ========================= */
+/* Light Theme */
+/* ========================= */
+
+.app.light {
+  background: #f5f5f5;
+  color: #222;
+}
+
+.app.light .sidebar {
+  background: white;
+  color: #222;
+  border-right: 1px solid #ddd;
+}
+
+.app.light .main {
+  background: #f5f5f5;
+}
+
+.app.light .card,
+.app.light .panel {
+  background: white;
+  color: #222;
+  border: 1px solid #ddd;
+}
+
+
+
+/* ===== Light Theme Text Fix ===== */
+
+.app.light {
+  color: #222;
+}
+
+.app.light h1,
+.app.light h2,
+.app.light h3,
+.app.light h4,
+.app.light h5,
+.app.light h6,
+.app.light p,
+.app.light span,
+.app.light label,
+.app.light a {
+  color: #222 !important;
+}
+
+.app.light input,
+.app.light select,
+.app.light textarea {
+  background: white;
+  color: #222;
+  border: 1px solid #ccc;
+}
+
+.app.light input::placeholder {
+  color: #666;
+}
+
+.app.light button {
+  color: white;
+}
+
+
+
+/* Theme Switch */
+
+.theme-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.theme-switch input {
+  display: none;
+}
+
+.mode-label {
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 80px;
+  color: inherit;
+}
+
+.slider {
+  position: relative;
+  width: 60px;
+  height: 32px;
+  background: #bdbdbd;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: white;
+  transition: 0.3s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.theme-switch input:checked + .slider {
+  background: #22c55e;
+}
+
+.theme-switch input:checked + .slider::before {
+  transform: translateX(28px);
+}
