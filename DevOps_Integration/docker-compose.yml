@@ -1,19 +1,38 @@
-version: '3.8'
+
 
 services:
   frontend:
     build: ../Frontend
     ports:
-      - "3000:3000"
+      - "3000:5173"
     depends_on:
       - backend
 
   backend:
-    build: ../Backend_Dtabase
+    build:
+      context: ../Backend_Dtabase
+
     ports:
-      - "5000:5000"
+      - "5001:5000"
+    
     depends_on:
       - database
+    environment:
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_NAME: marketmind
+      DB_USER: postgres
+      DB_PASSWORD: password
+      JWT_SECRET: marketmind_secret_key
+    
+  ai-service:
+    build: ../AIML
+    container_name: sales-prediction-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - backend
+    
 
   database:
     image: postgres:16

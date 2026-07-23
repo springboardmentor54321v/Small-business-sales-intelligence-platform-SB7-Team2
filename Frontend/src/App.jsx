@@ -1,11 +1,5 @@
 import Dashboard from "./components/Dashboard";
 import Inventory from "./components/Inventory";
-import CreateInvoice from "./components/CreateInvoice";
-import InvoiceList from "./components/InvoiceList";
-import CustomerInsights from "./components/CustomerInsights";
-import Recommendation from "./components/Recommendation";
-import AnomalyAlerts from "./components/AnomalyAlerts";
-import ForecastReports from "./components/ForecastReports";
 import api from "./api";
 import axios from "axios";
 import { useState, useEffect } from "react";
@@ -21,19 +15,13 @@ const roleMenus = {
     "Logout",
   ],
 
-Manager: [
-  "Dashboard",
-  "Sales Upload",
-  "Create Invoice",
-  "Invoice List",
-  "Customer Insights",
-  "Recommendation",
-  "Anomaly Alerts",
-  "Forecast Reports",
-  "Inventory",
-  "Reports",
-  "Logout",
-],
+  Manager: [
+    "Dashboard",
+    "Sales Upload",
+    "Inventory",
+    "Reports",
+    "Logout",
+  ],
 
   "Sales Executive": [
     "Dashboard",
@@ -60,9 +48,6 @@ const [showRegister, setShowRegister] = useState(false);
 
 const [role, setRole] = useState("Admin");
 const [activePage, setActivePage] = useState("Dashboard");
-const [theme, setTheme] = useState(
-  localStorage.getItem("theme") || "dark"
-);
 
 const [fullName, setFullName] = useState("");
 const [email, setEmail] = useState("");
@@ -250,11 +235,6 @@ const roleMap = {
   Manager: 2,
   "Sales Executive": 3,
 };
-const handleDeveloperLogin = () => {
-  setRole("Manager");
-  setIsLoggedIn(true);
-  setActivePage("Dashboard");
-};
 const handleLogin = async () => {
 
   if (!email || !password) {
@@ -292,7 +272,7 @@ const registerUser = async () => {
   try {
 
     const response = await axios.post(
-      "http://localhost:5000/api/auth/register",
+      "http://localhost:5001/api/auth/register",
       {
         full_name: fullName,
         email: email,
@@ -364,13 +344,6 @@ const registerUser = async () => {
   Login
 </button>
 
-<button
-  className="secondary-btn"
-  onClick={handleDeveloperLogin}
-  style={{ marginTop: "10px" }}
->
-  Developer Login (Manager)
-</button>
 
           <button
             className="secondary-btn"
@@ -453,7 +426,7 @@ return (
 
 return(
 
-    <div className={`app ${theme}`}>
+    <div className="app">
 
 
       <aside className="sidebar">
@@ -468,25 +441,9 @@ return(
           {role}
         </p>
 
-        <label className="theme-switch">
-  <span className="mode-label">
-    {theme === "dark" ? "🌙 Dark" : "☀️ Light"}
-  </span>
 
-  <input
-    type="checkbox"
-    checked={theme === "light"}
-    onChange={() => {
-      const newTheme = theme === "dark" ? "light" : "dark";
-      setTheme(newTheme);
-      localStorage.setItem("theme", newTheme);
-    }}
-  />
 
-  <span className="slider"></span>
-</label>
-
-<nav>
+        <nav>
 
 
         {
@@ -559,41 +516,7 @@ return(
 
   )
 }
-{
-  activePage === "Create Invoice" && (
-    <CreateInvoice />
-  )
-}
 
-{
-  activePage === "Invoice List" && (
-    <InvoiceList />
-  )
-}
-
-{
-  activePage === "Customer Insights" && (
-    <CustomerInsights />
-  )
-}
-
-{
-  activePage === "Recommendation" && (
-    <Recommendation />
-  )
-}
-
-{
-  activePage === "Anomaly Alerts" && (
-    <AnomalyAlerts />
-  )
-}
-
-{
-  activePage === "Forecast Reports" && (
-    <ForecastReports />
-  )
-}
 
 
 
