@@ -1,0 +1,10 @@
+Day 1 - Planning
+Day 2 - Customer Segmentation
+Day 3 - Segmentation API
+Day 4 - Churn Prediction
+Day 5 - Churn API
+Day 6 - Product Recommendation
+Day 7 - Recommendation API
+Day 8 - Anomaly Detection
+Day 9 - Anomaly API Testing
+Day 10 - Final Integration

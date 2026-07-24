@@ -55,3 +55,68 @@ def predict(
         "Order Day": day,
         "Predicted Sales": round(float(prediction[0]), 2)
     }
+
+@app.get("/customer-segment/{customer_id}")
+def get_customer_segment(customer_id: str):
+    import pandas as pd
+
+    df = pd.read_csv("AIML/output/customer_segments.csv")
+
+    result = df[df["Customer ID"] == customer_id]
+
+    if result.empty:
+        return {"message": "Customer not found"}
+
+    return result.to_dict(orient="records")
+@app.get("/churn-risk/{customer_id}")
+def get_churn_risk(customer_id: str):
+
+    import pandas as pd
+
+    df = pd.read_csv("AIML/output/churn_predictions.csv")
+
+    result = df[df["Customer ID"] == customer_id]
+
+    if result.empty:
+        return {"message": "Customer not found"}
+
+    return result.to_dict(orient="records")
+
+@app.get("/recommend-product/{product_id}")
+def recommend_product(product_id: str):
+
+    import pandas as pd
+
+    df = pd.read_csv("AIML/data/raw/Sample_Superstore.csv")
+
+    product = df[df["Product ID"] == product_id]
+
+    if product.empty:
+        return {"message": "Product not found"}
+
+    category = product.iloc[0]["Category"]
+
+    recommendations = df[
+        (df["Category"] == category)
+        & (df["Product ID"] != product_id)
+    ]
+
+    return recommendations[
+        ["Product ID", "Product Name", "Category"]
+    ].head(5).to_dict(orient="records")
+
+@app.get("/anomaly/{order_id}")
+def get_anomaly(order_id: str):
+
+    import pandas as pd
+
+    df = pd.read_csv("AIML/output/anomaly_results.csv")
+
+    result = df[df["Order ID"] == order_id]
+
+    if result.empty:
+        return {"message": "Order ID not found"}
+
+    return result[
+        ["Order ID", "Sales", "Anomaly"]
+    ].to_dict(orient="records")
