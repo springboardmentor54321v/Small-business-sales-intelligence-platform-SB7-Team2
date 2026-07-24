@@ -1,40 +1,35 @@
+import { useState, useEffect } from "react";
+import api from "../api";
+
 function InvoiceList() {
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const invoices = [
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
 
-    {
-      invoice: "INV001",
-      customer: "John",
-      product: "Laptop",
-      quantity: 1,
-      amount: 50000,
-      status: "Paid",
-    },
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
 
-    {
-      invoice: "INV002",
-      customer: "Rahul",
-      product: "Mouse",
-      quantity: 2,
-      amount: 1000,
-      status: "Unpaid",
-    },
+      const response = await api.get("/api/invoices");
 
-    {
-      invoice: "INV003",
-      customer: "Priya",
-      product: "Keyboard",
-      quantity: 1,
-      amount: 1500,
-      status: "Partial",
-    },
+      setInvoices(response.data.invoices);
+    } catch (err) {
+      console.error(err);
 
-  ];
+      setError(
+        err.response?.data?.message || "Failed to fetch invoices"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
-
     switch (status) {
-
       case "Paid":
         return "green";
 
@@ -47,74 +42,83 @@ function InvoiceList() {
       default:
         return "gray";
     }
-
   };
 
+  if (loading) {
+    return (
+      <div className="panel">
+        <h2>Loading invoices...</h2>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="panel">
+        <h2>{error}</h2>
+      </div>
+    );
+  }
+
   return (
-
     <div className="panel">
-
       <h1>Invoice List</h1>
 
       <table>
-
         <thead>
-
           <tr>
-            <th>Invoice</th>
+            <th>Invoice No</th>
             <th>Customer</th>
-            <th>Product</th>
-            <th>Quantity</th>
+            <th>Sales Person</th>
             <th>Amount</th>
             <th>Status</th>
           </tr>
-
         </thead>
 
         <tbody>
+          {invoices.length > 0 ? (
+            invoices.map((invoice) => (
+              <tr key={invoice.invoice_id}>
+                <td>{invoice.invoice_no}</td>
 
-          {invoices.map((invoice) => (
+                <td>{invoice.customer_name}</td>
 
-            <tr key={invoice.invoice}>
+                <td>{invoice.user_name}</td>
 
-              <td>{invoice.invoice}</td>
+                <td>₹{Number(invoice.total_amount).toLocaleString()}</td>
 
-              <td>{invoice.customer}</td>
-
-              <td>{invoice.product}</td>
-
-              <td>{invoice.quantity}</td>
-
-              <td>₹{invoice.amount}</td>
-
-              <td>
-
-                <span
-                  style={{
-                    background: getStatusColor(invoice.status),
-                    color: "white",
-                    padding: "6px 12px",
-                    borderRadius: "20px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {invoice.status}
-                </span>
-
+                <td>
+                  <span
+                    style={{
+                      background: getStatusColor(invoice.payment_status),
+                      color: "white",
+                      padding: "6px 12px",
+                      borderRadius: "20px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {invoice.payment_status}
+                  </span>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td
+                colSpan="5"
+                style={{
+                  textAlign: "center",
+                  padding: "20px",
+                }}
+              >
+                No invoices found.
               </td>
-
             </tr>
-
-          ))}
-
+          )}
         </tbody>
-
       </table>
-
     </div>
-
   );
-
 }
 
 export default InvoiceList;

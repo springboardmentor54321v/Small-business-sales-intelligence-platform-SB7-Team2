@@ -245,15 +245,21 @@ const handleLogin = async () => {
   try {
 
     const response = await api.post("/api/auth/login", {
-      email,
-      password,
-    });
+  email,
+  password,
+});
 
-    localStorage.setItem("token", response.data.token);
+localStorage.setItem("token", response.data.token);
 
-    alert("Login Successful");
+// Save logged-in user
+localStorage.setItem(
+  "user",
+  JSON.stringify(response.data.user)
+);
 
-    setIsLoggedIn(true);
+alert("Login Successful");
+
+setIsLoggedIn(true);
 
   } catch (error) {
 

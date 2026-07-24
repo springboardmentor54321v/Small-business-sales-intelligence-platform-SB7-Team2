@@ -1,131 +1,235 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../api";
 
 function CreateInvoice() {
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  const customers = [
-    "John",
-    "Rahul",
-    "Priya"
-  ];
+  const [customers, setCustomers] = useState([]);
+  const [products, setProducts] = useState([]);
 
-  const products = [
-    {
-      id: 101,
-      name: "Laptop",
-      price: 50000,
-    },
-    {
-      id: 102,
-      name: "Mouse",
-      price: 500,
-    },
-    {
-      id: 103,
-      name: "Keyboard",
-      price: 1500,
-    },
-  ];
+  const [customerId, setCustomerId] = useState("");
+  const [productId, setProductId] = useState("");
 
-  const [customer, setCustomer] = useState(customers[0]);
-  const [productId, setProductId] = useState(products[0].id);
   const [quantity, setQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
-  const [paymentStatus, setPaymentStatus] = useState("Paid");
 
-  const selectedProduct = products.find(
-    (p) => p.id === Number(productId)
-  );
+  const [dueDate, setDueDate] = useState("");
+  const [tax, setTax] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [notes, setNotes] = useState("");
 
-  const total = selectedProduct.price * quantity;
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    try {
+      setLoading(true);
+
+      const [customerRes, productRes] = await Promise.all([
+        api.get("/api/customers"),
+        api.get("/api/products"),
+      ]);
+
+      setCustomers(customerRes.data.customers || []);
+      setProducts(productRes.data.products || []);
+
+      if (customerRes.data.customers?.length) {
+        setCustomerId(customerRes.data.customers[0].customer_id);
+      }
+
+      if (productRes.data.products?.length) {
+        setProductId(productRes.data.products[0].product_id);
+      }
+
+      setDueDate(new Date().toISOString().split("T")[0]);
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load customers and products.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedProduct =
+    products.find(
+      (p) => Number(p.product_id) === Number(productId)
+    ) || {};
+
+  // Change this if your backend returns selling_price instead of price
+  const price =
+    Number(selectedProduct.price ?? selectedProduct.selling_price ?? 0);
+
+  const subtotal = price * Number(quantity);
+
+  const total =
+    subtotal +
+    Number(tax) -
+    Number(discount);
+
+  const handleCreateInvoice = async () => {
+    if (!customerId) {
+      alert("Please select a customer.");
+      return;
+    }
+
+    if (!productId) {
+      alert("Please select a product.");
+      return;
+    }
+
+    if (Number(quantity) <= 0) {
+      alert("Quantity must be greater than zero.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      await api.post("/api/invoices", {
+        customer_id: Number(customerId),
+        user_id: user.user_id,
+        due_date: dueDate,
+        tax: Number(tax),
+        discount: Number(discount),
+        notes,
+        items: [
+          {
+            product_id: Number(productId),
+            quantity: Number(quantity),
+          },
+        ],
+      });
+
+      alert("Invoice created successfully!");
+
+      setQuantity(1);
+      setTax(0);
+      setDiscount(0);
+      setNotes("");
+
+    } catch (err) {
+      console.error(err);
+
+      alert(
+        err.response?.data?.message ||
+        "Failed to create invoice."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+    
+  
   return (
     <div className="panel">
-
       <h1>Create Invoice</h1>
 
-      <div className="form-group">
+      {loading ? (
+        <h3>Loading...</h3>
+      ) : (
+        <div className="form-group">
 
-        <label>Customer</label>
+          <label>Customer</label>
+          <select
+            value={customerId}
+            onChange={(e) => setCustomerId(e.target.value)}
+          >
+            {customers.map((customer) => (
+              <option
+                key={customer.customer_id}
+                value={customer.customer_id}
+              >
+                {customer.customer_name}
+              </option>
+            ))}
+          </select>
 
-        <select
-          value={customer}
-          onChange={(e) => setCustomer(e.target.value)}
-        >
-          {customers.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
+          <label>Product</label>
+          <select
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+          >
+            {products.map((product) => (
+              <option
+                key={product.product_id}
+                value={product.product_id}
+              >
+                {product.product_name}
+              </option>
+            ))}
+          </select>
 
-        <label>Product</label>
+          <label>Quantity</label>
+          <input
+            type="number"
+            min="1"
+            value={quantity}
+            onChange={(e) => setQuantity(Number(e.target.value))}
+          />
 
-        <select
-          value={productId}
-          onChange={(e) => setProductId(e.target.value)}
-        >
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+          <label>Unit Price</label>
+          <input
+            type="text"
+            readOnly
+            value={`₹${price.toFixed(2)}`}
+          />
 
-        <label>Quantity</label>
+          <label>Subtotal</label>
+          <input
+            type="text"
+            readOnly
+            value={`₹${subtotal.toFixed(2)}`}
+          />
 
-        <input
-          type="number"
-          value={quantity}
-          min="1"
-          onChange={(e) => setQuantity(Number(e.target.value))}
-        />
+          <label>Tax</label>
+          <input
+            type="number"
+            value={tax}
+            onChange={(e) => setTax(Number(e.target.value))}
+          />
 
-        <label>Unit Price</label>
+          <label>Discount</label>
+          <input
+            type="number"
+            value={discount}
+            onChange={(e) => setDiscount(Number(e.target.value))}
+          />
 
-        <input
-          value={`₹${selectedProduct.price}`}
-          readOnly
-        />
+          <label>Due Date</label>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
 
-        <label>Total</label>
+          <label>Notes</label>
+          <textarea
+            rows={4}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
 
-        <input
-          value={`₹${total}`}
-          readOnly
-        />
+          <label>Total</label>
+          <input
+            type="text"
+            readOnly
+            value={`₹${total.toFixed(2)}`}
+          />
 
-        <label>Payment Method</label>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={handleCreateInvoice}
+          >
+            {submitting ? "Creating Invoice..." : "Create Invoice"}
+          </button>
 
-        <select
-          value={paymentMethod}
-          onChange={(e) => setPaymentMethod(e.target.value)}
-        >
-          <option>Cash</option>
-          <option>UPI</option>
-          <option>Card</option>
-          <option>Net Banking</option>
-        </select>
-
-        <label>Payment Status</label>
-
-        <select
-          value={paymentStatus}
-          onChange={(e) => setPaymentStatus(e.target.value)}
-        >
-          <option>Paid</option>
-          <option>Partial</option>
-          <option>Unpaid</option>
-        </select>
-
-        <button
-          style={{ marginTop: "20px" }}
-          onClick={() =>
-            alert("Invoice Created Successfully!")
-          }
-        >
-          Create Invoice
-        </button>
-
-      </div>
-
+        </div>
+      )}
     </div>
   );
 }
