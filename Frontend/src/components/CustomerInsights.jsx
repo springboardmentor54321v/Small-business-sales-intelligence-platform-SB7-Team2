@@ -1,32 +1,30 @@
-function CustomerInsights() {
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-  const customers = [
-    {
-      name: "John",
-      category: "Loyal"
-    },
-    {
-      name: "Rahul",
-      category: "Occasional"
-    },
-    {
-      name: "Priya",
-      category: "High Value"
-    },
-    {
-      name: "Kumar",
-      category: "Loyal"
-    },
-    {
-      name: "Aisha",
-      category: "High Value"
+function CustomerInsights() {
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCustomerSegment();
+  }, []);
+
+  const fetchCustomerSegment = async () => {
+    try {
+      const res = await axios.get(
+        "http://127.0.0.1:8000/customer-segment/AA-10315"
+      );
+
+      setCustomers(res.data);
+    } catch (err) {
+      console.error("Error fetching customer segment:", err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   return (
-
     <div className="panel">
-
       <h1>Customer Insights</h1>
 
       <div
@@ -34,70 +32,58 @@ function CustomerInsights() {
           display: "flex",
           gap: "20px",
           marginBottom: "30px",
-          flexWrap: "wrap"
+          flexWrap: "wrap",
         }}
       >
-
         <div className="card">
-          <h2>45</h2>
+          <h2>{customers.length}</h2>
           <p>Total Customers</p>
         </div>
 
         <div className="card">
-          <h2>20</h2>
+          <h2>-</h2>
           <p>Loyal Customers</p>
         </div>
 
         <div className="card">
-          <h2>8</h2>
+          <h2>-</h2>
           <p>High Value Customers</p>
         </div>
-
       </div>
 
       <div className="card">
-
         <h2>Customer Segmentation</h2>
 
-        <table>
-
-          <thead>
-
-            <tr>
-              <th>Customer</th>
-              <th>Category</th>
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {customers.map((customer) => (
-
-              <tr key={customer.name}>
-
-                <td>{customer.name}</td>
-
-                <td>{customer.category}</td>
-
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Customer ID</th>
+                <th>Segment</th>
               </tr>
+            </thead>
 
-            ))}
-
-          </tbody>
-
-        </table>
-
+            <tbody>
+              {customers.map((customer, index) => (
+                <tr key={index}>
+                  <td>{customer["Customer ID"]}</td>
+                  <td>{customer["Segment"]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div
         className="card"
         style={{
           marginTop: "30px",
-          textAlign: "center"
+          textAlign: "center",
         }}
       >
-
         <h2>Customer Insights Chart</h2>
 
         <div
@@ -106,22 +92,16 @@ function CustomerInsights() {
             border: "2px dashed #38bdf8",
             borderRadius: "10px",
             display: "flex",
-            alignItems: "center",
             justifyContent: "center",
-            fontSize: "22px"
+            alignItems: "center",
+            fontSize: "22px",
           }}
         >
-
           📈 Chart Placeholder
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }
 
 export default CustomerInsights;

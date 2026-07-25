@@ -1,199 +1,213 @@
-import { useState, useEffect } from "react";
-import api from "../api";
-
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-import { Line } from "react-chartjs-2";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { saveAs } from "file-saver";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+import { useState } from "react";
+import axios from "axios";
 
 function ForecastReports() {
-  const [forecastData, setForecastData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const today = new Date();
 
-  useEffect(() => {
-    loadForecast();
-  }, []);
+  const [form, setForm] = useState({
+    quantity: 5,
+    discount: 0.1,
+    year: today.getFullYear(),
+    month: today.getMonth() + 1,
+    day: today.getDate(),
+  });
 
-  const loadForecast = async () => {
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: Number(e.target.value),
+    });
+  };
+
+  const predictSales = async () => {
+    setLoading(true);
+
     try {
-      const token = localStorage.getItem("token");
-
-      const response = await api.get("/api/forecast", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setForecastData(response.data);
-    } catch (error) {
-      console.log("Forecast API not available. Using sample data.");
-
-      setForecastData([
-        { month: "Jan", sales: 120 },
-        { month: "Feb", sales: 150 },
-        { month: "Mar", sales: 170 },
-        { month: "Apr", sales: 165 },
-        { month: "May", sales: 210 },
-        { month: "Jun", sales: 240 },
-        { month: "Jul", sales: 280 },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const exportCSV = () => {
-    const rows = [["Month", "Predicted Sales"]];
-
-    forecastData.forEach((item) => {
-      rows.push([item.month, item.sales]);
-    });
-
-    const csv = rows.map((row) => row.join(",")).join("\n");
-
-    const blob = new Blob([csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    saveAs(blob, "Forecast_Report.csv");
-  };
-
-  const exportPDF = () => {
-    const doc = new jsPDF();
-
-    doc.setFontSize(18);
-    doc.text("Forecast Report", 14, 20);
-
-    autoTable(doc, {
-      head: [["Month", "Predicted Sales"]],
-      body: forecastData.map((item) => [
-        item.month,
-        item.sales,
-      ]),
-    });
-
-    doc.save("Forecast_Report.pdf");
-  };
-
-  const data = {
-    labels: forecastData.map((item) => item.month),
-
-    datasets: [
-      {
-        label: "Predicted Sales",
-        data: forecastData.map((item) => item.sales),
-        borderColor: "#38bdf8",
-        backgroundColor: "#38bdf8",
-        tension: 0.4,
-      },
-    ],
-  };
-
-  const options = {
-    responsive: true,
-
-    plugins: {
-      legend: {
-        position: "top",
-      },
-
-      title: {
-        display: true,
-        text: "Sales Forecast",
-      },
+      const res = await axios.get("http://localhost:8000/predict", 
+  {
+    params: {
+      quantity: form.quantity,
+      discount: form.discount,
+      year: form.year,
+      month: form.month,
+      day: form.day,
     },
-  };
-
-  if (loading) {
-    return (
-      <div className="panel">
-        <h2>Loading Forecast...</h2>
-      </div>
-    );
+    withCredentials: false,
+    maxRedirects: 0,
   }
+);
+
+      setPrediction(res.data);
+    } catch (err) {
+  console.error("Prediction Error:", err);
+
+  if (err.response) {
+    console.log("Status:", err.response.status);
+    console.log("Data:", err.response.data);
+    alert(
+      `API Error ${err.response.status}\n${JSON.stringify(err.response.data)}`
+    );
+  } else if (err.request) {
+    console.log("No response received:", err.request);
+    alert("Request reached the server but no response was received.");
+  } else {
+    console.log("Error:", err.message);
+    alert(err.message);
+  }
+}
+
+    setLoading(false);
+  };
 
   return (
     <div className="panel">
-      <h1>Forecast Reports</h1>
+      <h1>AI Sales Predictor</h1>
 
       <p>
-        Predicted future sales using{" "}
-        {forecastData.length ? "forecast data." : "sample data."}
+        Predict future sales using the trained Machine Learning model.
       </p>
-
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          marginTop: "20px",
-          marginBottom: "20px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div className="card">
-          <h2>₹280K</h2>
-          <p>Expected Revenue</p>
-        </div>
-
-        <div className="card">
-          <h2>+18%</h2>
-          <p>Growth Rate</p>
-        </div>
-
-        <div className="card">
-          <h2>95%</h2>
-          <p>Forecast Accuracy</p>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: "15px",
-          marginBottom: "20px",
-        }}
-      >
-        <button onClick={exportCSV}>
-          Export CSV
-        </button>
-
-        <button onClick={exportPDF}>
-          Export PDF
-        </button>
-      </div>
 
       <div
         className="card"
         style={{
-          marginTop: "20px",
+          maxWidth: "650px",
+          marginTop: "30px",
+          padding: "30px",
         }}
       >
-        <Line
-          data={data}
-          options={options}
-        />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2,1fr)",
+            gap: "20px",
+          }}
+        >
+          <div>
+            <label>Quantity</label>
+            <input
+              type="number"
+              name="quantity"
+              value={form.quantity}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div>
+            <label>Discount</label>
+            <input
+              type="number"
+              step="0.01"
+              name="discount"
+              value={form.discount}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div>
+            <label>Year</label>
+            <input
+              type="number"
+              name="year"
+              value={form.year}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div>
+            <label>Month</label>
+            <input
+              type="number"
+              min="1"
+              max="12"
+              name="month"
+              value={form.month}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div>
+            <label>Day</label>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              name="day"
+              value={form.day}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={predictSales}
+          style={{
+            marginTop: "25px",
+            width: "100%",
+          }}
+        >
+          {loading ? "Predicting..." : "Predict Sales"}
+        </button>
       </div>
+
+      {prediction && (
+        <div
+          className="card"
+          style={{
+            marginTop: "30px",
+            textAlign: "center",
+            padding: "40px",
+          }}
+        >
+          <h2>Prediction Result</h2>
+
+          <h1
+            style={{
+              fontSize: "52px",
+              color: "#38bdf8",
+            }}
+          >
+            ₹ {prediction["Predicted Sales"]}
+          </h1>
+
+          <div
+            style={{
+              marginTop: "20px",
+              display: "grid",
+              gridTemplateColumns: "repeat(2,1fr)",
+              gap: "15px",
+            }}
+          >
+            <div className="card">
+              <strong>Quantity</strong>
+              <br />
+              {prediction.Quantity}
+            </div>
+
+            <div className="card">
+              <strong>Discount</strong>
+              <br />
+              {prediction.Discount}
+            </div>
+
+            <div className="card">
+              <strong>Date</strong>
+              <br />
+              {prediction["Order Day"]}/
+              {prediction["Order Month"]}/
+              {prediction["Order Year"]}
+            </div>
+
+            <div className="card">
+              <strong>Model</strong>
+              <br />
+              Linear Regression
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

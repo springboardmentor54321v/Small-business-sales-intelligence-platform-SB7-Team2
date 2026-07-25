@@ -1,89 +1,78 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+
 function Recommendation() {
+  const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const recommendations = [
+  useEffect(() => {
+    fetchRecommendation();
+  }, []);
 
-    {
-      id: 1,
-      product: "Laptop",
-      recommendation: "Wireless Mouse",
-      confidence: "95%",
-    },
+  const fetchRecommendation = async () => {
+    try {
+      const res = await axios.get(
+        "http://127.0.0.1:8000/recommend-product/FUR-BO-10001798"
+      );
 
-    {
-      id: 2,
-      product: "Keyboard",
-      recommendation: "Mouse Pad",
-      confidence: "89%",
-    },
-
-    {
-      id: 3,
-      product: "Printer",
-      recommendation: "A4 Paper Pack",
-      confidence: "91%",
-    },
-
-    {
-      id: 4,
-      product: "Monitor",
-      recommendation: "HDMI Cable",
-      confidence: "93%",
+      if (Array.isArray(res.data)) {
+        setRecommendations(res.data);
+      } else {
+        setRecommendations([res.data]);
+      }
+    } catch (err) {
+      console.error("Error fetching recommendations:", err);
+    } finally {
+      setLoading(false);
     }
-
-  ];
+  };
 
   return (
-
     <div className="panel">
-
       <h1>Recommendation Engine</h1>
 
-      <p>
-        Products frequently purchased together.
-      </p>
+      <p>AI-powered product recommendations.</p>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
-          gap: "20px",
-          marginTop: "30px",
-        }}
-      >
+      {loading ? (
+        <p>Loading recommendations...</p>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+            gap: "20px",
+            marginTop: "30px",
+          }}
+        >
+          {recommendations.map((item, index) => (
+            <div key={index} className="card">
+              <h2>{item.product || item["Product"] || "Product"}</h2>
 
-        {recommendations.map((item) => (
+              <h3>⬇</h3>
 
-          <div
-            key={item.id}
-            className="card"
-          >
+              <h2>
+                {item.recommendation ||
+                  item["Recommended Product"] ||
+                  item["Recommendation"] ||
+                  "No Recommendation"}
+              </h2>
 
-            <h2>{item.product}</h2>
-
-            <h3>⬇</h3>
-
-            <h2>{item.recommendation}</h2>
-
-            <p>
-
-              Confidence Score
-
-              <br />
-
-              <strong>{item.confidence}</strong>
-
-            </p>
-
-          </div>
-
-        ))}
-
-      </div>
-
+              <p>
+                Confidence Score
+                <br />
+                <strong>
+                  {item.confidence ||
+                    item["Confidence"] ||
+                    item["confidence_score"] ||
+                    "N/A"}
+                </strong>
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-
   );
-
 }
 
 export default Recommendation;
