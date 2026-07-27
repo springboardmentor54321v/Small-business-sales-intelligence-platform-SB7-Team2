@@ -80,9 +80,18 @@ exports.createCustomer = async (req, res) => {
 // Get All Customers (Authenticated Users)
 exports.getCustomers = async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT * FROM customers ORDER BY customer_id ASC"
-    );
+    const { search } = req.query;
+    let queryStr = "SELECT * FROM customers";
+    let queryParams = [];
+
+    if (search && search.trim() !== "") {
+      queryStr += " WHERE customer_name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1";
+      queryParams.push(`%${search.trim()}%`);
+    }
+
+    queryStr += " ORDER BY customer_id ASC";
+
+    const result = await pool.query(queryStr, queryParams);
 
     res.status(200).json({
       success: true,

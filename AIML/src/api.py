@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import joblib
 
@@ -11,10 +12,19 @@ app = FastAPI(
     version="1.0"
 )
 
+# CORS middleware to allow React app to connect directly
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # ==========================
 # Load Trained Model
 # ==========================
-model = joblib.load("AIML/models/sales_prediction_model.pkl")
+model = joblib.load("models/sales_prediction_model.pkl")
 
 # ==========================
 # Home Endpoint
@@ -56,11 +66,13 @@ def predict(
         "Predicted Sales": round(float(prediction[0]), 2)
     }
 
+# ==========================
+# Customer Segmentation API
+# ==========================
 @app.get("/customer-segment/{customer_id}")
 def get_customer_segment(customer_id: str):
-    import pandas as pd
 
-    df = pd.read_csv("AIML/output/customer_segments.csv")
+    df = pd.read_csv("output/customer_segments.csv")
 
     result = df[df["Customer ID"] == customer_id]
 
@@ -68,12 +80,15 @@ def get_customer_segment(customer_id: str):
         return {"message": "Customer not found"}
 
     return result.to_dict(orient="records")
+
+
+# ==========================
+# Churn Risk API
+# ==========================
 @app.get("/churn-risk/{customer_id}")
 def get_churn_risk(customer_id: str):
 
-    import pandas as pd
-
-    df = pd.read_csv("AIML/output/churn_predictions.csv")
+    df = pd.read_csv("output/churn_predictions.csv")
 
     result = df[df["Customer ID"] == customer_id]
 
@@ -82,12 +97,14 @@ def get_churn_risk(customer_id: str):
 
     return result.to_dict(orient="records")
 
+
+# ==========================
+# Product Recommendation API
+# ==========================
 @app.get("/recommend-product/{product_id}")
 def recommend_product(product_id: str):
 
-    import pandas as pd
-
-    df = pd.read_csv("AIML/data/raw/Sample_Superstore.csv")
+    df = pd.read_csv("data/raw/Sample_Superstore.csv")
 
     product = df[df["Product ID"] == product_id]
 
@@ -105,12 +122,14 @@ def recommend_product(product_id: str):
         ["Product ID", "Product Name", "Category"]
     ].head(5).to_dict(orient="records")
 
+
+# ==========================
+# Anomaly Detection API
+# ==========================
 @app.get("/anomaly/{order_id}")
 def get_anomaly(order_id: str):
 
-    import pandas as pd
-
-    df = pd.read_csv("AIML/output/anomaly_results.csv")
+    df = pd.read_csv("output/anomaly_results.csv")
 
     result = df[df["Order ID"] == order_id]
 

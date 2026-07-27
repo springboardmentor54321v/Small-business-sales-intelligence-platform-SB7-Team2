@@ -13,6 +13,8 @@ const reportRoutes = require("./routes/reportRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const invoiceRoutes = require("./routes/invoiceRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const userRoutes = require("./routes/userRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 
 const app = express();
 
@@ -38,6 +40,8 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/categories", categoryRoutes);
 
 // Test Route
 app.get("/", (req, res) => {

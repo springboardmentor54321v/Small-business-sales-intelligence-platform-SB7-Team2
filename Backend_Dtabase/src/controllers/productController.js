@@ -4,7 +4,10 @@ const { pool } = require("../config/db");
 exports.getProducts = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM products ORDER BY product_id ASC"
+      `SELECT p.*, c.category_name 
+       FROM products p 
+       LEFT JOIN categories c ON p.category_id = c.category_id 
+       ORDER BY p.product_id ASC`
     );
 
     res.status(200).json({
