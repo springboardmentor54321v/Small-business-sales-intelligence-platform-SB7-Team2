@@ -113,7 +113,18 @@ exports.createInvoice = async (req, res) => {
         nextSeq = seq + 1;
       }
     }
-    const invoice_no = `${prefix}${String(nextSeq).padStart(5, "0")}`;
+    
+    let invoice_no = `${prefix}${String(nextSeq).padStart(5, "0")}`;
+    let exists = true;
+    while (exists) {
+      const checkDup = await client.query("SELECT invoice_id FROM invoices WHERE invoice_no = $1", [invoice_no]);
+      if (checkDup.rows.length > 0) {
+        nextSeq++;
+        invoice_no = `${prefix}${String(nextSeq).padStart(5, "0")}`;
+      } else {
+        exists = false;
+      }
+    }
 
     // 6. Calculate tax, discount, total_amount
     const taxAmount = tax ? parseFloat(tax) : 0;

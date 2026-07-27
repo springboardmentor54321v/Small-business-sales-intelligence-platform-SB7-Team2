@@ -8,15 +8,27 @@ const registerUser = async (req, res) => {
   try {
     const { full_name, email, password, phone, role_id } = req.body;
 
-    const existingUser = await pool.query(
+    const existingEmail = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
 
-    if (existingUser.rows.length > 0) {
+    if (existingEmail.rows.length > 0) {
       return res.status(400).json({
         success: false,
         message: "Email already exists",
+      });
+    }
+
+    const existingPhone = await pool.query(
+      "SELECT * FROM users WHERE phone = $1",
+      [phone]
+    );
+
+    if (existingPhone.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number already exists",
       });
     }
 
@@ -43,6 +55,13 @@ const registerUser = async (req, res) => {
 
   } catch (error) {
     console.error(error);
+
+    if (error?.code === "23505") {
+      return res.status(400).json({
+        success: false,
+        message: "A user with this email or phone number already exists",
+      });
+    }
 
     res.status(500).json({
       success: false,

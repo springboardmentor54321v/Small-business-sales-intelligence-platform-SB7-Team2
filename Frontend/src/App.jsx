@@ -1,799 +1,250 @@
+import { useState, useEffect } from "react";
 import Dashboard from "./components/Dashboard";
 import Inventory from "./components/Inventory";
 import CreateInvoice from "./components/CreateInvoice";
 import InvoiceList from "./components/InvoiceList";
 import CustomerInsights from "./components/CustomerInsights";
 import Recommendation from "./components/Recommendation";
-import AnomalyAlerts from "./components/AnomalyAlerts";
+import SalesUpload from "./components/SalesUpload";
+import Payments from "./components/Payments";
+import UsersRolesCategories from "./components/UsersRolesCategories";
+import AiInsights from "./components/AiInsights";
+import PredictSales from "./components/PredictSales";
 import ForecastReports from "./components/ForecastReports";
+import Login from "./components/Login";
+import Register from "./components/Register";
 import api from "./api";
-import axios from "axios";
-import { useState, useEffect } from "react";
 import "./App.css";
 
-
-const roleMenus = {
-  Admin: [
-    "Dashboard",
-    "Users",
-    "Reports",
-    "Settings",
-    "Logout",
-  ],
-
-Manager: [
-  "Dashboard",
-  "Sales Upload",
-  "Create Invoice",
-  "Invoice List",
-  "Customer Insights",
-  "Recommendation",
-  "Anomaly Alerts",
-  "Forecast Reports",
-  "Inventory",
-  "Reports",
-  "Logout",
-],
-
-  "Sales Executive": [
-    "Dashboard",
-    "Sales Upload",
-    "My Sales",
-    "Logout",
-  ],
-};
-
-
 function App() {
-
-const [isLoggedIn, setIsLoggedIn] = useState(false);
-useEffect(() => {
-
-  const token = localStorage.getItem("token");
-
-  if (token) {
-    setIsLoggedIn(true);
-  }
-
-}, []);
-const [showRegister, setShowRegister] = useState(false);
-
-const [role, setRole] = useState("Admin");
-const [activePage, setActivePage] = useState("Dashboard");
-const [theme, setTheme] = useState(
-  localStorage.getItem("theme") || "dark"
-);
-
-const [fullName, setFullName] = useState("");
-const [email, setEmail] = useState("");
-const [phone, setPhone] = useState("");
-const [password, setPassword] = useState("");
-
-const [fileName, setFileName] = useState("");
-const [selectedFile, setSelectedFile] = useState(null);
-const [previewData, setPreviewData] = useState([]);
-const [errors, setErrors] = useState([]);
-
-
-  const requiredFields = [
-  "customer_id",
-  "product_id",
-  "quantity",
-  "payment_method",
-  "payment_status"
-];
-
-
-  const handleFileUpload = (file) => {
-
-    if (!file) return;
-
-
-    setFileName(file.name);
-    setSelectedFile(file);
-    setErrors([]);
-    setPreviewData([]);
-
-
-    if (!file.name.endsWith(".csv")) {
-
-      setErrors([
-        "Only CSV files are allowed."
-      ]);
-
-      return;
-    }
-
-
-    const reader = new FileReader();
-
-
-    reader.onload = (event)=>{
-
-      const text = event.target.result;
-
-
-      const rows = text
-      .split("\n")
-      .filter(row=>row.trim() !== "");
-
-
-
-      if(rows.length < 2){
-
-        setErrors([
-          "CSV file must contain header and data."
-        ]);
-
-        return;
-      }
-
-
-
-      const headers = rows[0]
-      .split(",")
-      .map(h=>h.trim().toLowerCase());
-
-
-
-      const missingFields = requiredFields.filter(
-        field=>!headers.includes(field)
-      );
-
-
-
-      if(missingFields.length > 0){
-
-        setErrors([
-          `Missing required fields: ${missingFields.join(", ")}`
-        ]);
-
-        return;
-      }
-
-
-
-      const data = rows.slice(1,6).map(row=>{
-
-        const values = row.split(",");
-
-        let obj={};
-
-
-        headers.forEach((header,index)=>{
-
-          obj[header] =
-          values[index]
-          ? values[index].trim()
-          : "";
-
-        });
-
-
-        return obj;
-
-      });
-
-
-      setPreviewData(data);
-
-
-    };
-
-
-    reader.readAsText(file);
-
-  };
-
-
-
-  const handleDrop=(event)=>{
-
-    event.preventDefault();
-
-    handleFileUpload(
-      event.dataTransfer.files[0]
-    );
-
-  };
-
-
-
-  const handleDragOver=(event)=>{
-
-    event.preventDefault();
-
-  };
-
-  const uploadSalesCSV = async () => {
-
-  if (!selectedFile) {
-    alert("Please choose a CSV file first.");
-    return;
-  }
-
-  try {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [activePage, setActivePage] = useState("Dashboard");
+  const [theme, setTheme] = useState("dark"); // Default dark mode
+
+  // Load theme and profile on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setTheme(savedTheme);
+    document.documentElement.className = savedTheme;
 
     const token = localStorage.getItem("token");
+    if (token) {
+      fetchProfile();
+    } else {
+      setIsLoggedIn(false);
+      setLoadingProfile(false);
+    }
+  }, []);
 
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-
-    const response = await api.post(
-      "/api/upload/sales",
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get("/api/auth/profile");
+      if (response.data.success) {
+        setUserProfile(response.data.user);
+        setIsLoggedIn(true);
       }
+    } catch (err) {
+      console.error("Failed to load user session profile", err);
+      localStorage.removeItem("token");
+      setIsLoggedIn(false);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  // Sync profile when login state toggles to true
+  useEffect(() => {
+    if (isLoggedIn && !userProfile) {
+      fetchProfile();
+    }
+  }, [isLoggedIn]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.className = newTheme;
+  };
+
+  const getRoleName = () => {
+    if (!userProfile) return "Guest";
+    const roleId = Number(userProfile.role_id);
+    if (roleId === 1) return "System Administrator";
+    if (roleId === 2) return "Store Manager";
+    if (roleId === 3) return "Sales Executive";
+    if (roleId === 4) return "Business Owner";
+    return "Guest";
+  };
+
+  // RBAC lists of pages
+  const getRoleMenus = () => {
+    const roleName = getRoleName();
+    if (roleName === "System Administrator") {
+      return [
+        "Dashboard",
+        "Control Console",
+        "Products Catalog",
+        "Inventory",
+        "Sales Upload",
+        "Invoices",
+        "Invoice Creator",
+        "Payments Ledger",
+        "Reports Suite",
+        "AI Insights",
+        "Sales Predictor",
+        "Logout"
+      ];
+    }
+    if (roleName === "Store Manager") {
+      return [
+        "Dashboard",
+        "Products Catalog",
+        "Inventory",
+        "Sales Upload",
+        "Invoices",
+        "Invoice Creator",
+        "Payments Ledger",
+        "Reports Suite",
+        "AI Insights",
+        "Sales Predictor",
+        "Logout"
+      ];
+    }
+    if (roleName === "Sales Executive") {
+      return [
+        "Dashboard",
+        "Products Catalog",
+        "Sales Upload",
+        "Invoices",
+        "Invoice Creator",
+        "Sales Predictor",
+        "Logout"
+      ];
+    }
+    if (roleName === "Business Owner") {
+      return [
+        "Dashboard",
+        "Sales Upload",
+        "Payments Ledger",
+        "Reports Suite",
+        "AI Insights",
+        "Sales Predictor",
+        "Logout"
+      ];
+    }
+    return ["Dashboard", "Logout"];
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setUserProfile(null);
+    setActivePage("Dashboard");
+  };
+
+  if (loadingProfile) {
+    return (
+      <div className="login-page">
+        <div style={{ textAlign: "center" }}>
+          <div className="spinner"></div>
+          <p style={{ color: "#94a3b8", marginTop: "12px" }}>Establishing secure network session...</p>
+        </div>
+      </div>
     );
-
-    alert(response.data.message || "Sales CSV uploaded successfully.");
-    setSelectedFile(null);
-    setFileName("");
-    setPreviewData([]);
-
-  } catch (error) {
-
-    alert(
-      error.response?.data?.message || "CSV Upload Failed"
-    );
-
   }
-
-};
-
-const roleMap = {
-  Admin: 1,
-  Manager: 2,
-  "Sales Executive": 3,
-};
-const handleDeveloperLogin = () => {
-  setRole("Manager");
-  setIsLoggedIn(true);
-  setActivePage("Dashboard");
-};
-const handleLogin = async () => {
-
-  if (!email || !password) {
-    alert("Please enter email and password");
-    return;
-  }
-
-  try {
-
-    const response = await api.post("/api/auth/login", {
-      email,
-      password,
-    });
-
-    localStorage.setItem("token", response.data.token);
-
-    alert("Login Successful");
-
-    setIsLoggedIn(true);
-
-  } catch (error) {
-
-    console.log(error.response?.data);
-console.log(error.response);
-
-alert(
-  JSON.stringify(error.response?.data) || "Login Failed"
-);
-
-  }
-
-};
-const registerUser = async () => {
-
-  try {
-
-    const response = await axios.post(
-      "http://localhost:5000/api/auth/register",
-      {
-        full_name: fullName,
-        email: email,
-        password: password,
-        phone: phone,
-        role_id: roleMap[role],
-      }
-    );
-
-    alert(response.data.message || "Registration Successful");
-
-    setShowRegister(false);
-
-    setFullName("");
-    setEmail("");
-    setPhone("");
-    setPassword("");
-
-  } catch (error) {
-
-    alert(
-      error.response?.data?.message ||
-      "Registration Failed"
-    );
-
-  }
-
-};
-
 
   if (!isLoggedIn) {
-
-  if (!showRegister) {
-
-    return (
-
-      <div className="login-page">
-
-        <div className="login-card">
-
-          <h1>MarketMind AI</h1>
-
-          <p>Small Business Sales Intelligence Platform</p>
-
-          <input
-            type="email"
-            placeholder="Enter Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <input
-            type="password"
-            placeholder="Enter Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-          >
-            <option>Admin</option>
-            <option>Manager</option>
-            <option>Sales Executive</option>
-          </select>
-
-          <button onClick={handleLogin}>
-  Login
-</button>
-
-<button
-  className="secondary-btn"
-  onClick={handleDeveloperLogin}
-  style={{ marginTop: "10px" }}
->
-  Developer Login (Manager)
-</button>
-
-          <button
-            className="secondary-btn"
-            onClick={() => setShowRegister(true)}
-          >
-            Get Started
-          </button>
-
-        </div>
-
-      </div>
-
-    );
-
+    if (showRegister) {
+      return <Register setShowRegister={setShowRegister} />;
+    }
+    return <Login setIsLoggedIn={setIsLoggedIn} setShowRegister={setShowRegister} setUserProfile={setUserProfile} />;
   }
 
-return (
+  const menuItems = getRoleMenus();
 
-  <div className="login-page">
-
-    <div className="login-card">
-
-      <h1>MarketMind AI</h1>
-
-      <p>Create Your Account</p>
-
-      <input
-        placeholder="Full Name"
-        value={fullName}
-        onChange={(e) => setFullName(e.target.value)}
-      />
-
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-
-      <input
-        placeholder="Phone Number"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-      />
-
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-
-      <select
-        value={role}
-        onChange={(e) => setRole(e.target.value)}
-      >
-        <option>Admin</option>
-        <option>Manager</option>
-        <option>Sales Executive</option>
-      </select>
-
-      <button onClick={registerUser}>
-        Get Started
-      </button>
-
-      <button
-        className="secondary-btn"
-        onClick={() => setShowRegister(false)}
-      >
-        Back to Login
-      </button>
-
-    </div>
-
-  </div>
-
-);
-
-}
-
-return(
-
+  return (
     <div className={`app ${theme}`}>
-
-
+      
+      {/* Sidebar Navigation */}
       <aside className="sidebar">
-
-
-        <h2>
-          MarketMind AI
-        </h2>
-
-
-        <p>
-          {role}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+          <h2 style={{ fontSize: "20px" }}>MarketMind AI</h2>
+          <button 
+            onClick={toggleTheme} 
+            style={{ 
+              background: "transparent", 
+              border: "none", 
+              fontSize: "18px", 
+              cursor: "pointer", 
+              padding: "4px" 
+            }}
+            title="Toggle Light/Dark Theme"
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
+        </div>
+        <p style={{ fontSize: "12px", color: "#38bdf8", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 30px" }}>
+          {getRoleName()}
         </p>
 
-        <label className="theme-switch">
-  <span className="mode-label">
-    {theme === "dark" ? "🌙 Dark" : "☀️ Light"}
-  </span>
-
-  <input
-    type="checkbox"
-    checked={theme === "light"}
-    onChange={() => {
-      const newTheme = theme === "dark" ? "light" : "dark";
-      setTheme(newTheme);
-      localStorage.setItem("theme", newTheme);
-    }}
-  />
-
-  <span className="slider"></span>
-</label>
-
-<nav>
-
-
-        {
-          roleMenus[role].map((item)=>(
-
-
+        <nav>
+          {menuItems.map((item) => (
             <a
               key={item}
-
-              className={
-                activePage===item
-                ?"active"
-                :""
-              }
-
-
-              onClick={()=>{
-
+              className={activePage === item ? "active" : ""}
+              onClick={() => {
                 if (item === "Logout") {
-
-                    localStorage.removeItem("token");
-
-                    setIsLoggedIn(false);
-
-                    setActivePage("Dashboard");
-
-                  }
-
-                else{
-
+                  handleLogout();
+                } else {
                   setActivePage(item);
-
                 }
-
               }}
-
             >
-
+              {item === "Dashboard" && "📊 "}
+              {item === "Control Console" && "⚙️ "}
+              {item === "Products Catalog" && "📦 "}
+              {item === "Inventory" && "🏭 "}
+              {item === "Sales Upload" && "Ingest Batch "}
+              {item === "Invoices" && "🧾 "}
+              {item === "Invoice Creator" && "📝 "}
+              {item === "Payments Ledger" && "💳 "}
+              {item === "Reports Suite" && "📈 "}
+              {item === "AI Insights" && "💡 "}
+              {item === "Sales Predictor" && "🔮 "}
+              {item === "Logout" && "🚪 "}
               {item}
-
             </a>
-
-
-          ))
-        }
-
-
+          ))}
         </nav>
 
-
+        {userProfile && (
+          <div style={{ marginTop: "auto", paddingTop: "20px", borderTop: "1px solid #1e293b", textAlign: "left", fontSize: "12px" }}>
+            <span style={{ color: "#64748b" }}>User Profile:</span>
+            <div style={{ fontWeight: "bold", color: "#cbd5e1", marginTop: "2px" }}>{userProfile.full_name}</div>
+            <div style={{ color: "#64748b" }}>{userProfile.email}</div>
+          </div>
+        )}
       </aside>
 
-
-
-
+      {/* Main Workspace Panels */}
       <main className="main">
-
-
-        {
-          activePage==="Dashboard" && (
-
-            <Dashboard />
-
-          )
-        }
-        {
-  activePage === "Inventory" && (
-
-    <Inventory />
-
-  )
-}
-{
-  activePage === "Create Invoice" && (
-    <CreateInvoice />
-  )
-}
-
-{
-  activePage === "Invoice List" && (
-    <InvoiceList />
-  )
-}
-
-{
-  activePage === "Customer Insights" && (
-    <CustomerInsights />
-  )
-}
-
-{
-  activePage === "Recommendation" && (
-    <Recommendation />
-  )
-}
-
-{
-  activePage === "Anomaly Alerts" && (
-    <AnomalyAlerts />
-  )
-}
-
-{
-  activePage === "Forecast Reports" && (
-    <ForecastReports />
-  )
-}
-
-
-
-        {
-          activePage==="Sales Upload" && (
-
-          <section className="panel">
-
-
-            <h1>
-              Sales Data Upload
-            </h1>
-
-
-            <p>
-              Upload CSV sales data for validation and preview.
-            </p>
-
-
-
-            <div
-              className="upload-box"
-
-              onDrop={handleDrop}
-
-              onDragOver={handleDragOver}
-
-            >
-
-
-              <p>
-                Drag and drop your sales CSV file here
-              </p>
-
-
-
-              <label className="file-btn">
-
-                Choose CSV File
-
-
-                <input
-
-                  type="file"
-
-                  accept=".csv"
-
-                  onChange={
-                    e=>handleFileUpload(
-                      e.target.files[0]
-                    )
-                  }
-
-                />
-
-
-              </label>
-
-
-
-            </div>
-
-
-
-           {
-  fileName && (
-    <>
-      <p>
-        Selected file: {fileName}
-      </p>
-
-      <button
-      className="upload-btn"
-      onClick={uploadSalesCSV}
-      disabled={!selectedFile}
->
-      Upload CSV to Server
-      </button>
-    </>
-  )
-}
-
-
-
-            {
-              errors.length>0 &&
-
-              <div className="error-box">
-
-                <h3>
-                  Validation Errors
-                </h3>
-
-
-                {
-                  errors.map(error=>(
-
-                    <p key={error}>
-                      {error}
-                    </p>
-
-                  ))
-                }
-
-
-              </div>
-
-            }
-
-
-
-
-            {
-              previewData.length>0 &&
-
-              <div className="preview-box">
-
-
-                <h3>
-                  CSV Preview
-                </h3>
-
-
-
-                <table>
-
-                <thead>
-
-                <tr>
-
-                {
-                  requiredFields.map(field=>(
-
-                    <th key={field}>
-                      {field}
-                    </th>
-
-                  ))
-                }
-
-                </tr>
-
-                </thead>
-
-
-
-                <tbody>
-
-
-                {
-                  previewData.map((row,index)=>(
-
-                    <tr key={index}>
-
-
-                    {
-                      requiredFields.map(field=>(
-
-                        <td key={field}>
-                          {row[field]}
-                        </td>
-
-                      ))
-                    }
-
-
-                    </tr>
-
-
-                  ))
-                }
-
-
-                </tbody>
-
-
-                </table>
-
-
-              </div>
-
-            }
-
-
-
-          </section>
-
-          )
-        }
-
-
-
+        {activePage === "Dashboard" && <Dashboard />}
+        {activePage === "Control Console" && <UsersRolesCategories />}
+        {activePage === "Products Catalog" && <Recommendation />}
+        {activePage === "Inventory" && <Inventory />}
+        {activePage === "Sales Upload" && <SalesUpload />}
+        {activePage === "Invoices" && <InvoiceList />}
+        {activePage === "Invoice Creator" && <CreateInvoice />}
+        {activePage === "Payments Ledger" && <Payments />}
+        {activePage === "Reports Suite" && <ForecastReports />}
+        {activePage === "AI Insights" && <AiInsights />}
+        {activePage === "Sales Predictor" && <PredictSales />}
       </main>
-
-
     </div>
-
   );
-
 }
-
 
 export default App;

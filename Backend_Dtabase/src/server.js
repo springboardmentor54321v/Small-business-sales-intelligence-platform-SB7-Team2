@@ -6,11 +6,26 @@ const { connectDB } = require("./config/db");
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
-  await connectDB();
+  try {
+    await connectDB();
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-  });
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+
+    server.on("error", (error) => {
+      if (error.code === "EADDRINUSE") {
+        console.error(`❌ Port ${PORT} is already in use. Please stop the existing process and try again.`);
+        process.exit(1);
+      } else {
+        console.error("❌ Server error:", error);
+        process.exit(1);
+      }
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
 };
 
 startServer();
