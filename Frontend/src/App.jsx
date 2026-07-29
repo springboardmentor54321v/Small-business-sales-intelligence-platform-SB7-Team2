@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import BusinessOverview from "./components/BusinessOverview";
+import Notifications from "./components/Notifications";
+import ForecastVsActual from "./components/ForecastVsActual";
 import Dashboard from "./components/Dashboard";
 import Inventory from "./components/Inventory";
 import CreateInvoice from "./components/CreateInvoice";
@@ -110,6 +113,9 @@ function App() {
         "Reports Suite",
         "AI Insights",
         "Sales Predictor",
+        "Business Overview",
+        "Notifications",
+        "Forecast vs Actual",
         "Logout"
       ];
     }
@@ -121,18 +127,27 @@ function App() {
         "Invoices",
         "Invoice Creator",
         "Sales Predictor",
+        "Business Overview",
+        "Notifications",
+        "Forecast vs Actual",
         "Logout"
       ];
     }
     if (roleName === "Business Owner") {
       return [
-        "Dashboard",
-        "Sales Upload",
-        "Payments Ledger",
-        "Reports Suite",
-        "AI Insights",
-        "Sales Predictor",
-        "Logout"
+    "Dashboard",
+    "Business Overview",
+    "Notifications",
+    "Forecast vs Actual",
+    "Sales Upload",
+    "Payments Ledger",
+    "Reports Suite",
+    "AI Insights",
+    "Sales Predictor",
+    "Business Overview",
+    "Notifications",
+    "Forecast vs Actual",
+    "Logout"
       ];
     }
     return ["Dashboard", "Logout"];
@@ -214,6 +229,9 @@ function App() {
               {item === "Reports Suite" && "📈 "}
               {item === "AI Insights" && "💡 "}
               {item === "Sales Predictor" && "🔮 "}
+              {item === "Business Overview" && "📊 "}
+              {item === "Notifications" && "🔔 "}
+              {item === "Forecast vs Actual" && "📈 "}
               {item === "Logout" && "🚪 "}
               {item}
             </a>
@@ -242,6 +260,9 @@ function App() {
         {activePage === "Reports Suite" && <ForecastReports />}
         {activePage === "AI Insights" && <AiInsights />}
         {activePage === "Sales Predictor" && <PredictSales />}
+        {activePage === "Business Overview" && <BusinessOverview />}
+        {activePage === "Notifications" && <Notifications />}
+        {activePage === "Forecast vs Actual" && <ForecastVsActual />}
       </main>
     </div>
   );

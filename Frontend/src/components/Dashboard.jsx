@@ -43,7 +43,8 @@ useEffect(() => {
         },
       });
 
-      console.log(response.data);
+     console.log("Dashboard Response:", response.data);
+console.log("Dashboard Data:", response.data.dashboard);
 
       setDashboardData(response.data.dashboard);
 
@@ -92,7 +93,7 @@ if (!dashboardData) {
 }
   const salesTrend = {
 
-  labels: dashboardData.recentSales.map(
+  labels: (dashboardData.recentSales || []).map(
     (sale) =>
       new Date(sale.sale_date).toLocaleDateString()
   ),
@@ -103,7 +104,7 @@ if (!dashboardData) {
 
       label: "Recent Sales",
 
-      data: dashboardData.recentSales.map(
+      data: (dashboardData.recentSales || []).map(
         (sale) => sale.total_amount
       ),
 
@@ -129,7 +130,7 @@ if (!dashboardData) {
 
   const products = {
 
-  labels: dashboardData.topSellingProducts.map(
+  labels: (dashboardData.topSellingProducts || []).map(
     (item) => item.product_name
   ),
 
@@ -139,7 +140,7 @@ if (!dashboardData) {
 
       label: "Top Products",
 
-      data: dashboardData.topSellingProducts.map(
+      data: (dashboardData.topSellingProducts || []).map(
         (item) => item.total_quantity_sold
       ),
 
@@ -341,7 +342,7 @@ if (!dashboardData) {
 
     <tbody>
 
-      {dashboardData.recentSales.map((sale) => (
+      {(dashboardData.recentSales || []).map((sale) => (
 
         <tr key={sale.sale_id}>
 
