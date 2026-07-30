@@ -140,8 +140,53 @@ exports.createSale = async (req, res) => {
 // Get All Sales (Authenticated Users)
 exports.getSales = async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT 
+    const { search, start_date, end_date, payment_method, page = 1, limit = 10 } = req.query;
+
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const offsetNum = (pageNum - 1) * limitNum;
+
+    let baseQuery = `
+      FROM sales_transactions st
+      JOIN customers c ON st.customer_id = c.customer_id
+      JOIN sales_items si ON st.sale_id = si.sale_id
+      JOIN products p ON si.product_id = p.product_id
+    `;
+
+    const whereClauses = [];
+    const values = [];
+
+    if (search) {
+      values.push(`%${search}%`);
+      whereClauses.push(`(st.invoice_no ILIKE $${values.length} OR c.customer_name ILIKE $${values.length} OR p.product_name ILIKE $${values.length})`);
+    }
+
+    if (start_date) {
+      values.push(start_date);
+      whereClauses.push(`st.sale_date >= $${values.length}`);
+    }
+
+    if (end_date) {
+      values.push(end_date);
+      whereClauses.push(`st.sale_date <= $${values.length}`);
+    }
+
+    if (payment_method) {
+      values.push(payment_method);
+      whereClauses.push(`st.payment_method = $${values.length}`);
+    }
+
+    const whereStr = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // Count query
+    const countQuery = `SELECT COUNT(*) AS total ${baseQuery} ${whereStr}`;
+    const countRes = await pool.query(countQuery, values);
+    const totalItems = parseInt(countRes.rows[0].total, 10);
+    const totalPages = Math.ceil(totalItems / limitNum);
+
+    // Rows query
+    const dataQuery = `
+      SELECT 
         st.sale_id,
         st.invoice_no,
         st.customer_id,
@@ -157,19 +202,27 @@ exports.getSales = async (req, res) => {
         si.quantity,
         si.unit_price,
         si.subtotal
-       FROM sales_transactions st
-       JOIN customers c ON st.customer_id = c.customer_id
-       JOIN sales_items si ON st.sale_id = si.sale_id
-       JOIN products p ON si.product_id = p.product_id
-       ORDER BY st.sale_date DESC, st.sale_id DESC`
-    );
+      ${baseQuery}
+      ${whereStr}
+      ORDER BY st.sale_date DESC, st.sale_id DESC, si.sales_item_id ASC
+      LIMIT $${values.length + 1} OFFSET $${values.length + 2}
+    `;
+
+    const dataRes = await pool.query(dataQuery, [...values, limitNum, offsetNum]);
 
     res.status(200).json({
       success: true,
-      sales: result.rows,
+      message: "Sales history fetched successfully",
+      sales: dataRes.rows,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: pageNum,
+        limit: limitNum,
+      }
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error in getSales:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch sales history",

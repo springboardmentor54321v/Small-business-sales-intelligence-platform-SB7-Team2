@@ -10,7 +10,8 @@ const {
   getInvoiceById,
   updateInvoice,
   deleteInvoice,
-  getRevenueSummary
+  getRevenueSummary,
+  bulkUpdateInvoices
 } = require("../controllers/invoiceController");
 
 const protect = require("../middleware/authMiddleware");
@@ -22,7 +23,8 @@ const {
   createInvoiceSchema,
   updateInvoiceSchema,
   getInvoicesQuerySchema,
-  idParamSchema
+  idParamSchema,
+  bulkUpdateInvoicesSchema
 } = require("../middleware/validationMiddleware");
 
 const router = express.Router();
@@ -44,6 +46,13 @@ router.get(
 );
 
 // Invoice Routes with RBAC and Joi Validation
+router.patch(
+  "/bulk",
+  authorizeRoles("Business Owner", "System Administrator"),
+  validateBody(bulkUpdateInvoicesSchema),
+  bulkUpdateInvoices
+);
+
 router.post(
   "/",
   authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),

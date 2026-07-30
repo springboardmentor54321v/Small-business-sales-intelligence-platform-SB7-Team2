@@ -85,8 +85,49 @@ exports.createInventory = async (req, res) => {
 // Get All Inventory Records (Authenticated Users)
 exports.getInventory = async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT 
+    const { search, category_id, stock_status, page = 1, limit = 10 } = req.query;
+
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const offsetNum = (pageNum - 1) * limitNum;
+
+    let baseQuery = `
+      FROM inventory i
+      JOIN products p ON i.product_id = p.product_id
+    `;
+
+    const whereClauses = [];
+    const values = [];
+
+    if (search) {
+      values.push(`%${search}%`);
+      whereClauses.push(`(p.product_name ILIKE $${values.length} OR i.warehouse_location ILIKE $${values.length})`);
+    }
+
+    if (category_id) {
+      values.push(parseInt(category_id, 10));
+      whereClauses.push(`p.category_id = $${values.length}`);
+    }
+
+    if (stock_status) {
+      if (stock_status === "low") {
+        whereClauses.push(`i.stock_quantity <= i.reorder_level`);
+      } else if (stock_status === "normal") {
+        whereClauses.push(`i.stock_quantity > i.reorder_level`);
+      }
+    }
+
+    const whereStr = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // Count query
+    const countQuery = `SELECT COUNT(*) AS total ${baseQuery} ${whereStr}`;
+    const countRes = await pool.query(countQuery, values);
+    const totalItems = parseInt(countRes.rows[0].total, 10);
+    const totalPages = Math.ceil(totalItems / limitNum);
+
+    // Rows query
+    const dataQuery = `
+      SELECT 
         i.inventory_id,
         i.product_id,
         i.stock_quantity,
@@ -94,17 +135,26 @@ exports.getInventory = async (req, res) => {
         i.warehouse_location,
         i.last_updated,
         p.product_name
-       FROM inventory i
-       JOIN products p ON i.product_id = p.product_id
-       ORDER BY i.inventory_id ASC`
-    );
+      ${baseQuery}
+      ${whereStr}
+      ORDER BY i.inventory_id ASC
+      LIMIT $${values.length + 1} OFFSET $${values.length + 2}
+    `;
+
+    const dataRes = await pool.query(dataQuery, [...values, limitNum, offsetNum]);
 
     res.status(200).json({
       success: true,
-      inventory: result.rows,
+      inventory: dataRes.rows,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: pageNum,
+        limit: limitNum,
+      }
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error in getInventory:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch inventory",
@@ -200,5 +250,83 @@ exports.deleteInventory = async (req, res) => {
       success: false,
       message: "Failed to delete inventory record",
     });
+  }
+};
+
+// Bulk Update Inventory
+// PATCH /api/inventory/bulk
+exports.bulkUpdateInventory = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { updates } = req.body;
+
+    await client.query("BEGIN");
+
+    // Extract product IDs for existence check
+    const productIds = updates.map(u => u.product_id);
+
+    // Verify all products exist in inventory table
+    const checkRes = await client.query(
+      "SELECT product_id FROM inventory WHERE product_id = ANY($1::int[])",
+      [productIds]
+    );
+
+    const foundProductIds = checkRes.rows.map(r => r.product_id);
+    const missingProductIds = productIds.filter(id => !foundProductIds.includes(id));
+
+    if (missingProductIds.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: `Inventory records not found for product IDs: ${missingProductIds.join(", ")}`
+      });
+    }
+
+    const updatedRecords = [];
+
+    // Perform updates sequentially within transaction
+    for (const updateItem of updates) {
+      const { product_id, stock_quantity, reorder_level } = updateItem;
+      const setClauses = ["last_updated = CURRENT_TIMESTAMP"];
+      const updateVals = [];
+
+      if (stock_quantity !== undefined) {
+        updateVals.push(stock_quantity);
+        setClauses.push(`stock_quantity = $${updateVals.length}`);
+      }
+
+      if (reorder_level !== undefined) {
+        updateVals.push(reorder_level);
+        setClauses.push(`reorder_level = $${updateVals.length}`);
+      }
+
+      updateVals.push(product_id);
+      const queryStr = `
+        UPDATE inventory 
+        SET ${setClauses.join(", ")} 
+        WHERE product_id = $${updateVals.length} 
+        RETURNING *
+      `;
+
+      const result = await client.query(queryStr, updateVals);
+      updatedRecords.push(result.rows[0]);
+    }
+
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully updated ${updatedRecords.length} inventory records.`,
+      updatedInventory: updatedRecords
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error in bulkUpdateInventory:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to perform bulk inventory update"
+    });
+  } finally {
+    client.release();
   }
 };

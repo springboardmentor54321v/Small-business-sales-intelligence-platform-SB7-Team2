@@ -87,7 +87,9 @@ const getInvoicesQuerySchema = Joi.object({
   customer_id: Joi.number().integer().positive().optional(),
   start_date: Joi.date().iso().optional(),
   end_date: Joi.date().iso().optional(),
-  overdue: Joi.boolean().optional()
+  overdue: Joi.boolean().optional(),
+  page: Joi.number().integer().positive().default(1).optional(),
+  limit: Joi.number().integer().positive().default(10).optional()
 });
 
 const createInvoiceSchema = Joi.object({
@@ -222,6 +224,76 @@ const idParamSchema = Joi.object({
   })
 });
 
+// ----------------------------------------------------
+// 4. INVENTORY QUERY SCHEMAS
+// ----------------------------------------------------
+const getInventoryQuerySchema = Joi.object({
+  search: Joi.string().allow("").optional(),
+  category_id: Joi.number().integer().positive().optional(),
+  stock_status: Joi.string().valid("low", "normal").optional(),
+  page: Joi.number().integer().positive().default(1).optional(),
+  limit: Joi.number().integer().positive().default(10).optional()
+});
+
+const bulkUpdateInventorySchema = Joi.object({
+  updates: Joi.array().items(
+    Joi.object({
+      product_id: Joi.number().integer().positive().required().messages({
+        "number.base": "product_id must be a number",
+        "number.integer": "product_id must be an integer",
+        "number.positive": "product_id must be a positive integer",
+        "any.required": "product_id is required for bulk update"
+      }),
+      stock_quantity: Joi.number().integer().min(0).optional().messages({
+        "number.base": "stock_quantity must be a number",
+        "number.min": "stock_quantity cannot be negative"
+      }),
+      reorder_level: Joi.number().integer().min(0).optional().messages({
+        "number.base": "reorder_level must be a number",
+        "number.min": "reorder_level cannot be negative"
+      })
+    }).or("stock_quantity", "reorder_level").required()
+  ).min(1).required().messages({
+    "array.base": "updates must be an array",
+    "array.min": "updates must contain at least one item",
+    "any.required": "updates is required for bulk update"
+  })
+});
+
+// ----------------------------------------------------
+// 5. SALES QUERY SCHEMAS
+// ----------------------------------------------------
+const getSalesQuerySchema = Joi.object({
+  search: Joi.string().allow("").optional(),
+  start_date: Joi.date().iso().optional(),
+  end_date: Joi.date().iso().optional(),
+  payment_method: Joi.string().allow("").optional(),
+  page: Joi.number().integer().positive().default(1).optional(),
+  limit: Joi.number().integer().positive().default(10).optional()
+});
+
+// ----------------------------------------------------
+// 6. NOTIFICATION QUERY SCHEMAS
+// ----------------------------------------------------
+const getNotificationsQuerySchema = Joi.object({
+  type: Joi.string().valid("low_stock", "overdue_invoice").allow("").optional()
+});
+
+// ----------------------------------------------------
+// 7. BULK INVOICE SCHEMAS
+// ----------------------------------------------------
+const bulkUpdateInvoicesSchema = Joi.object({
+  ids: Joi.array().items(Joi.number().integer().positive().required()).min(1).required().messages({
+    "array.base": "ids must be an array of positive integers",
+    "array.min": "ids must contain at least one invoice ID",
+    "any.required": "ids is required for bulk update"
+  }),
+  payment_status: Joi.string().valid("Paid", "Unpaid", "Partial").required().messages({
+    "any.only": "payment_status must be one of: Paid, Unpaid, Partial",
+    "any.required": "payment_status is required for bulk update"
+  })
+});
+
 module.exports = {
   validateBody,
   validateParams,
@@ -231,5 +303,10 @@ module.exports = {
   updateInvoiceSchema,
   createPaymentSchema,
   updatePaymentSchema,
-  idParamSchema
+  idParamSchema,
+  getInventoryQuerySchema,
+  bulkUpdateInventorySchema,
+  getSalesQuerySchema,
+  getNotificationsQuerySchema,
+  bulkUpdateInvoicesSchema
 };

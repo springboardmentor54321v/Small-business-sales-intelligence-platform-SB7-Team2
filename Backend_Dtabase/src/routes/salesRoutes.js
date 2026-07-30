@@ -8,11 +8,12 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
+const { validateQuery, getSalesQuerySchema } = require("../middleware/validationMiddleware");
 
 const router = express.Router();
 
 // View Sales History (Logged-in Users)
-router.get("/", protect, getSales);
+router.get("/", protect, validateQuery(getSalesQuerySchema), getSales);
 
 // Create Sale (Admin Only)
 router.post("/", protect, authorizeRoles(1), createSale);

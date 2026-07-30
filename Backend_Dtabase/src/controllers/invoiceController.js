@@ -208,17 +208,94 @@ exports.createInvoice = async (req, res) => {
 // GET /api/invoices
 exports.getInvoices = async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT i.*, c.customer_name, u.full_name as user_name 
-       FROM invoices i
-       LEFT JOIN customers c ON i.customer_id = c.customer_id
-       LEFT JOIN users u ON i.user_id = u.user_id
-       ORDER BY i.invoice_id DESC`
-    );
+    const { 
+      search, 
+      payment_status, 
+      status, 
+      customer_id, 
+      start_date, 
+      end_date, 
+      overdue, 
+      page = 1, 
+      limit = 10 
+    } = req.query;
+
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const offsetNum = (pageNum - 1) * limitNum;
+
+    let baseQuery = `
+      FROM invoices i
+      LEFT JOIN customers c ON i.customer_id = c.customer_id
+      LEFT JOIN users u ON i.user_id = u.user_id
+    `;
+
+    const whereClauses = [];
+    const values = [];
+
+    if (search) {
+      values.push(`%${search}%`);
+      whereClauses.push(`(i.invoice_no ILIKE $${values.length} OR c.customer_name ILIKE $${values.length})`);
+    }
+
+    const targetStatus = payment_status || status;
+    if (targetStatus) {
+      if (targetStatus === "Overdue") {
+        whereClauses.push(`i.due_date < CURRENT_DATE AND i.payment_status != 'Paid'`);
+      } else {
+        values.push(targetStatus);
+        whereClauses.push(`i.payment_status = $${values.length}`);
+      }
+    }
+
+    if (customer_id) {
+      values.push(parseInt(customer_id, 10));
+      whereClauses.push(`i.customer_id = $${values.length}`);
+    }
+
+    if (start_date) {
+      values.push(start_date);
+      whereClauses.push(`i.invoice_date >= $${values.length}`);
+    }
+
+    if (end_date) {
+      values.push(end_date);
+      whereClauses.push(`i.invoice_date <= $${values.length}`);
+    }
+
+    if (overdue === true || overdue === "true") {
+      whereClauses.push(`i.due_date < CURRENT_DATE AND i.payment_status != 'Paid'`);
+    }
+
+    const whereStr = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // Count query
+    const countQuery = `SELECT COUNT(*) AS total ${baseQuery} ${whereStr}`;
+    const countRes = await pool.query(countQuery, values);
+    const totalItems = parseInt(countRes.rows[0].total, 10);
+    const totalPages = Math.ceil(totalItems / limitNum);
+
+    // Rows query
+    const dataQuery = `
+      SELECT i.*, c.customer_name, u.full_name as user_name 
+      ${baseQuery}
+      ${whereStr}
+      ORDER BY i.invoice_id DESC
+      LIMIT $${values.length + 1} OFFSET $${values.length + 2}
+    `;
+
+    const dataRes = await pool.query(dataQuery, [...values, limitNum, offsetNum]);
+
     return res.status(200).json({
       success: true,
       message: "Invoices fetched successfully",
-      invoices: result.rows
+      invoices: dataRes.rows,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: pageNum,
+        limit: limitNum,
+      }
     });
   } catch (error) {
     console.error("Error in getInvoices:", error);
@@ -514,6 +591,61 @@ exports.getRevenueSummary = async (req, res) => {
       success: false,
       message: "Failed to calculate revenue summary"
     });
+  }
+};
+
+// Bulk Update Invoices
+// PATCH /api/invoices/bulk
+exports.bulkUpdateInvoices = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { ids, payment_status } = req.body;
+
+    await client.query("BEGIN");
+
+    // Check if all IDs exist
+    const checkRes = await client.query(
+      "SELECT invoice_id FROM invoices WHERE invoice_id = ANY($1::int[])",
+      [ids]
+    );
+
+    const foundIds = checkRes.rows.map(r => r.invoice_id);
+    const missingIds = ids.filter(id => !foundIds.includes(id));
+
+    if (missingIds.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: `Invoices not found for IDs: ${missingIds.join(", ")}`
+      });
+    }
+
+    // Update invoices
+    const updateRes = await client.query(
+      `UPDATE invoices
+       SET payment_status = $1,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE invoice_id = ANY($2::int[])
+       RETURNING invoice_id, invoice_no, payment_status`,
+      [payment_status, ids]
+    );
+
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully updated ${updateRes.rows.length} invoices to status '${payment_status}'`,
+      updatedInvoices: updateRes.rows
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error in bulkUpdateInvoices:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to perform bulk invoice update"
+    });
+  } finally {
+    client.release();
   }
 };
 
