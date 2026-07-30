@@ -106,7 +106,7 @@ function BusinessOverview() {
     <div className="page">
       <div className="page-header">
         <h1>📊 Business Overview</h1>
-        <p>Complete business performance dashboard</p>
+        <p>Complete business performance dashboard.</p>
       </div>
 
       <div className="cards">
