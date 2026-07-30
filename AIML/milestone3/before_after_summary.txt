@@ -1,0 +1,62 @@
+Milestone 3 - Before vs After Summary
+
+1. Sales Forecasting
+Before:
+- Basic forecasting model.
+- Lower prediction accuracy.
+
+After:
+- Improved forecasting using Random Forest Regressor.
+- Model evaluated using MAE, MSE, and RMSE for better accuracy.
+
+--------------------------------------------------
+
+2. Customer Segmentation
+
+Before:
+- Customer segmentation based on limited features.
+
+After:
+- Improved segmentation using Sales, Quantity, and Profit features.
+- Better grouping of customers.
+
+--------------------------------------------------
+
+3. Churn Prediction
+
+Before:
+- Basic churn prediction logic.
+
+After:
+- Improved customer risk classification into Low Risk, Medium Risk, and High Risk based on sales performance.
+
+--------------------------------------------------
+
+4. Product Recommendation
+
+Before:
+- Simple product recommendations.
+
+After:
+- Improved recommendation system by grouping products based on category and removing duplicate recommendations.
+
+--------------------------------------------------
+
+5. Anomaly Detection
+
+Before:
+- Fixed threshold-based anomaly detection.
+
+After:
+- Statistical anomaly detection using Mean and Standard Deviation to identify unusual sales records.
+
+--------------------------------------------------
+
+Overall Improvements
+
+✔ Improved forecasting accuracy.
+✔ Enhanced customer segmentation.
+✔ Better churn prediction.
+✔ Improved recommendation quality.
+✔ Statistical anomaly detection.
+✔ Successfully tested all AI APIs.
