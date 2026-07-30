@@ -6,6 +6,7 @@
 const { pool } = require("../config/db");
 
 /**
+ * * 
  * Get Main Dashboard Summary Data
  * @route GET /api/dashboard or GET /api/dashboard/summary
  * @access Private
