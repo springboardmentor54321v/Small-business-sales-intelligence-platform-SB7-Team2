@@ -48,3 +48,33 @@
   padding: 20px;
   min-height: 350px;
 }
+
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notification-card {
+  background: #111827;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 18px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.notification-card:hover {
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+}
+
+.notification-card h3 {
+  color: #38bdf8;
+  margin-bottom: 8px;
+}
+
+.notification-card p {
+  color: #cbd5e1;
+}
