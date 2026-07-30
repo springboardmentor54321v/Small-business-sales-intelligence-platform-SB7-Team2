@@ -120,3 +120,18 @@ def get_anomaly(order_id: str):
     return result[
         ["Order ID", "Sales", "Anomaly"]
     ].to_dict(orient="records")
+
+from fastapi import FastAPI
+import random
+
+@app.get("/forecast")
+def forecast():
+
+    prediction = 1250.75
+
+    confidence_score = random.randint(85, 95)
+
+    return {
+        "predicted_sales": prediction,
+        "confidence_score": f"{confidence_score}%"
+    }

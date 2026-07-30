@@ -1,0 +1,15 @@
+Milestone 3 - Forecast Model Comparison
+
+Old Model (Milestone 1):
+- Forecasting: Basic Sales Prediction
+
+New Model (Milestone 3):
+- Algorithm: Random Forest Regressor
+
+Evaluation Metrics:
+- MAE: 101.70
+- MSE: 262954.32
+- RMSE: __________
+
+Conclusion:
+The Random Forest model provides a more robust forecasting approach and establishes a strong baseline for future improvements.

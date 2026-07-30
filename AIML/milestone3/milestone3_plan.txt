@@ -1,0 +1,45 @@
+Milestone 3 - AI/ML Upgrade Plan
+
+1. Sales Forecasting
+- Previous Model: Basic Forecasting Model
+- New Model: XGBoost or Random Forest
+- Improvement Goal:
+    - Lower MAE
+    - Lower RMSE
+    - Better prediction accuracy
+
+2. Customer Segmentation
+- Previous Approach:
+    - K-Means Clustering
+- Improvement:
+    - Better feature selection
+    - Improved customer grouping
+
+3. Churn Prediction
+- Previous Approach:
+    - Purchase frequency rules
+- Improvement:
+    - Reduce false positives
+    - Improve risk classification
+
+4. Product Recommendation
+- Previous Approach:
+    - Category-based recommendations
+- Improvement:
+    - Frequently bought together analysis
+    - Better product suggestions
+
+5. Anomaly Detection
+- Previous Approach:
+    - Simple sales threshold
+- Improvement:
+    - Statistical anomaly detection
+    - Reduce false alarms
+
+6. Dataset
+- Same Superstore dataset from Milestones 1 and 2 will be reused.
+- No new dataset will be created.
+
+Prepared By:
+Keerthika Devi
+AI/ML Engineer
