@@ -1,0 +1,22 @@
+Milestone 3 - API Test Report
+
+1. Home API
+Status: HTTP 200 OK
+
+2. Customer Segmentation API
+Status: HTTP 200 OK
+
+3. Churn Prediction API
+Status: HTTP 200 OK
+
+4. Product Recommendation API
+Status: HTTP 200 OK
+
+5. Anomaly Detection API
+Status: HTTP 200 OK
+
+6. Forecast API
+Status: HTTP 200 OK
+
+Conclusion:
+All AI APIs were tested successfully and are functioning as expected.
