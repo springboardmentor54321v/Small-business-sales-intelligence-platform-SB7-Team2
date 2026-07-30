@@ -1,0 +1,80 @@
+.page {
+  padding: 32px;
+  color: white;
+}
+
+.page-header {
+  margin-bottom: 30px;
+}
+
+.page-header h1 {
+  color: #38bdf8;
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.page-header p {
+  color: #94a3b8;
+  font-size: 18px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.card {
+  background: #111827;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.card h3 {
+  color: #38bdf8;
+  margin-bottom: 10px;
+}
+
+.card h2 {
+  color: white;
+}
+
+.chart-box {
+  background: #111827;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 350px;
+}
+
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notification-card {
+  background: #111827;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 18px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.notification-card:hover {
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+}
+
+.notification-card h3 {
+  color: #38bdf8;
+  margin-bottom: 8px;
+}
+
+.notification-card p {
+  color: #cbd5e1;
+}
