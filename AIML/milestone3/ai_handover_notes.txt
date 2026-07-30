@@ -1,0 +1,26 @@
+Milestone 3 - AI Handover Notes
+
+Completed Modules:
+1. Sales Forecasting (Random Forest)
+2. Customer Segmentation V2
+3. Churn Prediction V2
+4. Product Recommendation V2
+5. Anomaly Detection V2
+
+APIs Tested:
+- Home API
+- Forecast API
+- Customer Segmentation API
+- Churn Prediction API
+- Recommendation API
+- Anomaly Detection API
+
+Dataset Used:
+preprocessed_superstore.csv
+
+Status:
+All assigned AI/ML tasks for Milestone 3 have been completed successfully.
+
+Prepared By:
+Keerthika Devi
+AI/ML Engineer
