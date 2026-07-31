@@ -29,6 +29,9 @@ ChartJS.register(
 function Dashboard() {
 const [dashboardData, setDashboardData] = useState(null);
 const [loading, setLoading] = useState(true);
+const [dateRange, setDateRange] = useState("This Month");
+const [category, setCategory] = useState("All");
+const [selectedProduct, setSelectedProduct] = useState(null);
 useEffect(() => {
 
   const fetchDashboard = async () => {
@@ -43,8 +46,6 @@ useEffect(() => {
         },
       });
 
-     console.log("Dashboard Response:", response.data);
-console.log("Dashboard Data:", response.data.dashboard);
 
       setDashboardData(response.data.dashboard);
 
@@ -216,14 +217,41 @@ if (!dashboardData) {
 
   return(
 
-    <div className="dashboard">
+  <div className="dashboard">
 
+      <h1>Sales Dashboard</h1>
 
-      <h1>
-        Sales Dashboard
-      </h1>
+      <div className="filters">
 
+        <div className="filter-group">
+          <label>Date Range</label>
 
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+          >
+            <option>This Week</option>
+            <option>This Month</option>
+            <option>This Year</option>
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label>Category</label>
+
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option>All</option>
+            <option>Electronics</option>
+            <option>Furniture</option>
+            <option>Groceries</option>
+            <option>Clothing</option>
+          </select>
+        </div>
+
+      </div>
 
       <div className="cards">
 
@@ -306,26 +334,84 @@ if (!dashboardData) {
 
 
 
+       <div className="chart-box">
+
+  <h2>Top Products</h2>
+
+  <Pie
+    data={products}
+    options={{
+      ...chartOptions,
+      onClick: (_, elements) => {
+        if (!elements.length) return;
+
+        const index = elements[0].index;
+        setSelectedProduct(dashboardData.topSellingProducts[index]);
+      },
+    }}
+  />
+
+  {selectedProduct && (
+    <div
+      style={{
+        marginTop: "20px",
+        padding: "15px",
+        border: "1px solid #38bdf8",
+        borderRadius: "10px",
+      }}
+    >
+      <h3>Selected Product</h3>
+
+      <p><b>Name:</b> {selectedProduct.product_name}</p>
+      <p><b>Units Sold:</b> {selectedProduct.total_quantity_sold}</p>
+      <p><b>Revenue:</b> ₹{selectedProduct.total_revenue}</p>
+    </div>
+  )}
+
+</div>
+
+
+            </div>
+
+      {selectedProduct && (
         <div className="chart-box">
 
-          <h2>
-            Top Products
-          </h2>
+          <h2>Product Details</h2>
 
+          <table>
+            <tbody>
 
-          <Pie
-            data={products}
-            options={chartOptions}
-          />
+              <tr>
+                <td><strong>Product Name</strong></td>
+                <td>{selectedProduct.product_name}</td>
+              </tr>
 
+              <tr>
+                <td><strong>Units Sold</strong></td>
+                <td>{selectedProduct.total_quantity_sold}</td>
+              </tr>
+
+              <tr>
+                <td><strong>Total Revenue</strong></td>
+                <td>₹{selectedProduct.total_revenue}</td>
+              </tr>
+
+              {selectedProduct.category_name && (
+                <tr>
+                  <td><strong>Category</strong></td>
+                  <td>{selectedProduct.category_name}</td>
+                </tr>
+              )}
+
+            </tbody>
+          </table>
 
         </div>
+      )}
 
-
-      </div>
       <div className="chart-box">
 
-  <h2>Recent Sales</h2>
+        <h2>Recent Sales</h2>
 
   <table>
 
