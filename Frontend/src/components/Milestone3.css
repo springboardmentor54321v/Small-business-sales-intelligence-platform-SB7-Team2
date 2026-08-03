@@ -116,3 +116,8 @@
     font-size: 34px;
   }
 }
+
+.large-chart {
+  height: 420px;
+  margin-top: 30px;
+}

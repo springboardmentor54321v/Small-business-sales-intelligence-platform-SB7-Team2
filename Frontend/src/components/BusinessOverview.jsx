@@ -50,9 +50,7 @@ function BusinessOverview() {
           topSellingResponse.data.topSellingProducts || []
         );
 
-        console.log("Dashboard:", dashboardResponse.data);
-        console.log("Revenue:", revenueResponse.data);
-        console.log("Top Products:", topSellingResponse.data);
+        
       } catch (error) {
         console.error("Dashboard Error:", error);
       } finally {
@@ -93,14 +91,35 @@ function BusinessOverview() {
   };
 
   const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top",
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: "top",
+      labels: {
+        color: "#ffffff",
       },
     },
-  };
+  },
+  scales: {
+    x: {
+      ticks: {
+        color: "#ffffff",
+      },
+      grid: {
+        color: "#334155",
+      },
+    },
+    y: {
+      ticks: {
+        color: "#ffffff",
+      },
+      grid: {
+        color: "#334155",
+      },
+    },
+  },
+};
 
   return (
     <div className="page">
@@ -131,10 +150,7 @@ function BusinessOverview() {
         </div>
       </div>
 
-      <div
-        className="chart-box"
-        style={{ height: "420px", marginTop: "30px" }}
-      >
+      <div className="chart-box large-chart">
         <h2>Revenue Analytics</h2>
 
         {monthlyRevenue.length > 0 ? (
