@@ -16,7 +16,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const userRoutes = require("./routes/userRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
-
+const healthRoutes = require("./routes/healthRoutes");
 const app = express();
 
 // Security Middleware
@@ -44,6 +44,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/health", healthRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
