@@ -10,7 +10,7 @@ const api = axios.create({
 
 // FastAPI AI API client
 const aiApi = axios.create({
-  baseURL: import.meta.env.VITE_AI_API_URL || "http://localhost:8000",
+  baseURL: "https://curly-acorn-q75xr4grqpwph4g7g-8000.app.github.dev",
   headers: {
     "Content-Type": "application/json",
   },
