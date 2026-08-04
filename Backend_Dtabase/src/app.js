@@ -16,21 +16,59 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const userRoutes = require("./routes/userRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+<<<<<<< HEAD
 const healthRoutes = require("./routes/healthRoutes");
+=======
+
+// Security & Gateway Middlewares
+const { activityLogger } = require("./middleware/activityLogger");
+const sanitizerMiddleware = require("./middleware/sanitizerMiddleware");
+const { apiLimiter } = require("./middleware/rateLimiter");
+const { errorHandler, notFoundHandler } = require("./middleware/errorMiddleware");
+
+>>>>>>> a6bc80d (Complete Milestone 3 backend, security, testing, and documentation)
 const app = express();
 
-// Security Middleware
+// 1. Helmet HTTP Security Headers
 app.use(helmet());
 
-// CORS
-app.use(cors());
+// 2. Strict CORS Origin Whitelist Filter
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || "http://localhost:3000,http://localhost:5173")
+  .split(",")
+  .map(o => o.trim());
 
-// Logger
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  credentials: true,
+  maxAge: 86400 // Preflight response cache (24 hours)
+};
+app.use(cors(corsOptions));
+
+// Morgan dev logger
 app.use(morgan("dev"));
 
-// Body Parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 3. Body Parser with Strict 10KB Size Limiter
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+
+// 4. Activity & Security Event Audit Logger
+app.use(activityLogger);
+
+// 5. Global Input Sanitizer (XSS tag stripping, SQLi pattern blocking, NoSQL operator removal)
+app.use(sanitizerMiddleware);
+
+// 6. Express Rate Limiter
+app.use("/api", apiLimiter);
+
+// 7. Route Mounts
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/inventory", inventoryRoutes);
@@ -46,6 +84,9 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/health", healthRoutes);
 
+// Auth routes (Note: authLimiter is attached inside authRoutes)
+app.use('/api/auth', authRoutes);
+
 // Test Route
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -54,7 +95,8 @@ app.get("/", (req, res) => {
   });
 });
 
-// Auth routes
-app.use('/api/auth', authRoutes);
+// 8. 404 & Centralized Error Handlers
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 module.exports = app;

@@ -598,3 +598,150 @@ exports.getAnomalyAlerts = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get Audit Summary Report
+ * @route GET /api/reports/audit-summary
+ * @access Private (Admin & Business Owner Only)
+ */
+exports.getAuditSummary = async (req, res) => {
+  try {
+    // Ensure table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        log_id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        endpoint VARCHAR(255) NOT NULL,
+        http_method VARCHAR(10) NOT NULL,
+        response_status INTEGER NOT NULL,
+        execution_time_ms NUMERIC(10,2) DEFAULT 0,
+        client_ip VARCHAR(50),
+        event_type VARCHAR(50) DEFAULT 'API_REQUEST',
+        details TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 1. Fetch total counts
+    const totalCountRes = await pool.query("SELECT COUNT(*) as count FROM activity_logs");
+    const totalLogs = parseInt(totalCountRes.rows[0].count, 10);
+
+    // 2. Fetch counts per HTTP method
+    const methodCountsRes = await pool.query(
+      "SELECT http_method, COUNT(*) as count, ROUND(AVG(execution_time_ms), 2) as avg_time_ms FROM activity_logs GROUP BY http_method ORDER BY count DESC"
+    );
+
+    // 3. Fetch counts per event type
+    const eventTypeCountsRes = await pool.query(
+      "SELECT event_type, COUNT(*) as count FROM activity_logs GROUP BY event_type ORDER BY count DESC"
+    );
+
+    // 4. Top 10 most active users
+    const topUsersRes = await pool.query(`
+      SELECT 
+        COALESCE(u.full_name, 'Anonymous') as full_name, 
+        COALESCE(u.email, 'N/A') as email, 
+        al.user_id, 
+        COUNT(*) as activity_count 
+      FROM activity_logs al 
+      LEFT JOIN users u ON al.user_id = u.user_id 
+      GROUP BY al.user_id, u.full_name, u.email 
+      ORDER BY activity_count DESC 
+      LIMIT 10
+    `);
+
+    // 5. Top 10 most visited endpoints
+    const topEndpointsRes = await pool.query(
+      "SELECT endpoint, COUNT(*) as count FROM activity_logs GROUP BY endpoint ORDER BY count DESC LIMIT 10"
+    );
+
+    // 6. Response status categories
+    const statusCategoriesRes = await pool.query(`
+      SELECT 
+        CASE 
+          WHEN response_status >= 500 THEN 'Server Errors (5xx)' 
+          WHEN response_status >= 400 THEN 'Client Errors (4xx)' 
+          ELSE 'Success (2xx/3xx)' 
+        END as status_category, 
+        COUNT(*) as count 
+      FROM activity_logs 
+      GROUP BY status_category
+      ORDER BY count DESC
+    `);
+
+    // 7. Recent activity logs (last 50 logs)
+    const recentLogsRes = await pool.query(`
+      SELECT 
+        al.log_id, 
+        COALESCE(u.full_name, 'Anonymous') as user_name, 
+        al.endpoint, 
+        al.http_method, 
+        al.response_status, 
+        al.execution_time_ms, 
+        al.client_ip, 
+        al.event_type, 
+        al.details, 
+        al.created_at 
+      FROM activity_logs al 
+      LEFT JOIN users u ON al.user_id = u.user_id 
+      ORDER BY al.created_at DESC 
+      LIMIT 50
+    `);
+
+    return res.status(200).json({
+      success: true,
+      message: "Audit summary report fetched successfully",
+      metadata: {
+        generated_at: new Date().toISOString(),
+        total_logs: totalLogs
+      },
+      summary: {
+        total_activities: totalLogs,
+        by_method: methodCountsRes.rows.map(r => ({
+          method: r.http_method,
+          count: parseInt(r.count, 10),
+          avg_execution_time_ms: parseFloat(r.avg_time_ms || 0)
+        })),
+        by_event_type: eventTypeCountsRes.rows.map(r => ({
+          event_type: r.event_type,
+          count: parseInt(r.count, 10)
+        })),
+        by_status_category: statusCategoriesRes.rows.map(r => ({
+          status_category: r.status_category,
+          count: parseInt(r.count, 10)
+        })),
+        top_endpoints: topEndpointsRes.rows.map(r => ({
+          endpoint: r.endpoint,
+          count: parseInt(r.count, 10)
+        })),
+        top_active_users: topUsersRes.rows.map(r => ({
+          user_id: r.user_id,
+          full_name: r.full_name,
+          email: r.email,
+          activity_count: parseInt(r.activity_count, 10)
+        }))
+      },
+      recent_logs: recentLogsRes.rows.map(r => ({
+        log_id: r.log_id,
+        user_name: r.user_name,
+        endpoint: r.endpoint,
+        http_method: r.http_method,
+        response_status: r.response_status,
+        execution_time_ms: parseFloat(r.execution_time_ms || 0),
+        client_ip: r.client_ip,
+        event_type: r.event_type,
+        details: r.details,
+        created_at: r.created_at
+      }))
+    });
+
+  } catch (error) {
+    console.error("Error fetching audit summary report:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch audit summary report",
+      error: error.message
+    });
+  }
+};
+

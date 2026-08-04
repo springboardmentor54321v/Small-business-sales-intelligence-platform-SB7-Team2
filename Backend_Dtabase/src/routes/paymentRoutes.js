@@ -37,13 +37,13 @@ router.post(
 
 router.get(
   "/",
-  authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
   getPayments
 );
 
 router.get(
   "/:id",
-  authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
   validateParams(idParamSchema),
   getPaymentById
 );

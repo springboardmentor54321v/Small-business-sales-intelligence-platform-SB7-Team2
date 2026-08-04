@@ -18,19 +18,19 @@ const {
 
 const router = express.Router();
 
-// View Inventory (Logged-in Users)
-router.get("/", protect, validateQuery(getInventoryQuerySchema), getInventory);
+// View Inventory (System Administrator, Business Owner, Store Manager)
+router.get("/", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager"), validateQuery(getInventoryQuerySchema), getInventory);
 
-// Bulk Update Inventory (Admin, Business Owner, System Administrator)
-router.patch("/bulk", protect, authorizeRoles(1, "Business Owner", "System Administrator"), validateBody(bulkUpdateInventorySchema), bulkUpdateInventory);
+// Bulk Update Inventory (System Administrator, Business Owner, Store Manager)
+router.patch("/bulk", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager"), validateBody(bulkUpdateInventorySchema), bulkUpdateInventory);
 
-// Create Inventory (Admin Only)
-router.post("/", protect, authorizeRoles(1), createInventory);
+// Create Inventory (System Administrator, Business Owner, Store Manager)
+router.post("/", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager"), createInventory);
 
-// Update Inventory (Admin Only)
-router.put("/:id", protect, authorizeRoles(1), updateInventory);
+// Update Inventory (System Administrator, Business Owner, Store Manager)
+router.put("/:id", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager"), updateInventory);
 
-// Delete Inventory (Admin Only)
-router.delete("/:id", protect, authorizeRoles(1), deleteInventory);
+// Delete Inventory (System Administrator, Business Owner, Store Manager)
+router.delete("/:id", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager"), deleteInventory);
 
 module.exports = router;

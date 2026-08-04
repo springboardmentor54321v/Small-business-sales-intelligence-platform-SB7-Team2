@@ -35,13 +35,13 @@ router.use(protect);
 // Revenue Summary Routes (must be defined before /:id)
 router.get(
   "/revenue-summary",
-  authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
   getRevenueSummary
 );
 
 router.get(
   "/summary",
-  authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
   getRevenueSummary
 );
 
@@ -62,14 +62,14 @@ router.post(
 
 router.get(
   "/",
-  authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
   validateQuery(getInvoicesQuerySchema),
   getInvoices
 );
 
 router.get(
   "/:id",
-  authorizeRoles("Business Owner", "Sales Executive", "Store Manager", "System Administrator"),
+  authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
   validateParams(idParamSchema),
   getInvoiceById
 );

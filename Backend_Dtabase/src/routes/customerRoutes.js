@@ -11,16 +11,16 @@ const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// View Customers (Logged-in Users)
-router.get("/", protect, getCustomers);
+// View Customers (System Administrator, Business Owner, Store Manager, Sales Executive)
+router.get("/", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager", "Sales Executive"), getCustomers);
 
-// Create Customer (Admin Only)
-router.post("/", protect, authorizeRoles(1), createCustomer);
+// Create Customer (System Administrator, Business Owner, Store Manager, Sales Executive)
+router.post("/", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager", "Sales Executive"), createCustomer);
 
-// Update Customer (Admin Only)
-router.put("/:id", protect, authorizeRoles(1), updateCustomer);
+// Update Customer (System Administrator, Business Owner, Store Manager, Sales Executive)
+router.put("/:id", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager", "Sales Executive"), updateCustomer);
 
-// Delete Customer (Admin Only)
-router.delete("/:id", protect, authorizeRoles(1), deleteCustomer);
+// Delete Customer (System Administrator, Business Owner, Store Manager, Sales Executive)
+router.delete("/:id", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager", "Sales Executive"), deleteCustomer);
 
 module.exports = router;

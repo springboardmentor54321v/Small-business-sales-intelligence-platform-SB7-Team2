@@ -13,7 +13,8 @@ const {
   getCustomerGroups,
   getChurnRisk,
   getRecommendations,
-  getAnomalyAlerts
+  getAnomalyAlerts,
+  getAuditSummary
 } = require("../controllers/reportController");
 
 const protect = require("../middleware/authMiddleware");
@@ -24,12 +25,40 @@ const router = express.Router();
 // Apply protection middleware to all report routes
 router.use(protect);
 
-// Standard Reports
-router.get("/sales", getSalesReport);
-router.get("/inventory", getInventoryReport);
-router.get("/products", getProductReport);
-router.get("/customers", getCustomersReport);
-router.get("/revenue", getRevenueReport);
+// Standard Reports (Business Owner, Store Manager, System Administrator)
+router.get(
+  "/sales",
+  authorizeRoles("System Administrator", "Business Owner", "Store Manager"),
+  getSalesReport
+);
+router.get(
+  "/inventory",
+  authorizeRoles("System Administrator", "Business Owner", "Store Manager"),
+  getInventoryReport
+);
+router.get(
+  "/products",
+  authorizeRoles("System Administrator", "Business Owner", "Store Manager"),
+  getProductReport
+);
+router.get(
+  "/customers",
+  authorizeRoles("System Administrator", "Business Owner", "Store Manager"),
+  getCustomersReport
+);
+router.get(
+  "/revenue",
+  authorizeRoles("System Administrator", "Business Owner", "Store Manager"),
+  getRevenueReport
+);
+
+// Audit Summary Report (System Administrator & Business Owner Only)
+router.get(
+  "/audit-summary",
+  authorizeRoles("System Administrator", "Business Owner"),
+  getAuditSummary
+);
+
 
 // AI Report Routes with RBAC role authorization
 router.get(

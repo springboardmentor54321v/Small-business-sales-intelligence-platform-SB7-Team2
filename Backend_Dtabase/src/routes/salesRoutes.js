@@ -12,16 +12,16 @@ const { validateQuery, getSalesQuerySchema } = require("../middleware/validation
 
 const router = express.Router();
 
-// View Sales History (Logged-in Users)
-router.get("/", protect, validateQuery(getSalesQuerySchema), getSales);
+// View Sales History (System Administrator, Business Owner, Store Manager, Sales Executive)
+router.get("/", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager", "Sales Executive"), validateQuery(getSalesQuerySchema), getSales);
 
-// Create Sale (Admin Only)
-router.post("/", protect, authorizeRoles(1), createSale);
+// Create Sale (System Administrator, Business Owner, Store Manager, Sales Executive)
+router.post("/", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager", "Sales Executive"), createSale);
 
-// Update Sale Quantity (Admin Only)
-router.put("/:id", protect, authorizeRoles(1), updateSale);
+// Update Sale Quantity (System Administrator, Business Owner, Store Manager, Sales Executive)
+router.put("/:id", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager", "Sales Executive"), updateSale);
 
-// Delete Sale (Admin Only)
-router.delete("/:id", protect, authorizeRoles(1), deleteSale);
+// Delete Sale (System Administrator, Business Owner, Store Manager, Sales Executive)
+router.delete("/:id", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager", "Sales Executive"), deleteSale);
 
 module.exports = router;

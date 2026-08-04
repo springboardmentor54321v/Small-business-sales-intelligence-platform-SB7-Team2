@@ -10,10 +10,18 @@ exports.getNotifications = async (req, res) => {
     const { type } = req.query;
     let alerts = [];
 
-    // 1. Fetch low stock alerts if type is not specified or specifically low_stock
-    const fetchLowStock = !type || type === "low_stock";
-    // 2. Fetch overdue invoices if type is not specified or specifically overdue_invoice
-    const fetchOverdue = !type || type === "overdue_invoice";
+    // Query user role name
+    const userRoleId = req.user?.role || req.user?.role_id;
+    const roleResult = await pool.query("SELECT role_name FROM roles WHERE role_id = $1", [userRoleId]);
+    const roleName = roleResult.rows.length > 0 ? roleResult.rows[0].role_name : "";
+
+    const hasInventoryAccess = ["System Administrator", "Business Owner", "Store Manager"].includes(roleName) || userRoleId === 1;
+    const hasInvoiceAccess = ["System Administrator", "Business Owner", "Sales Executive"].includes(roleName) || userRoleId === 1;
+
+    // 1. Fetch low stock alerts if type is not specified or specifically low_stock AND user has access
+    const fetchLowStock = (!type || type === "low_stock") && hasInventoryAccess;
+    // 2. Fetch overdue invoices if type is not specified or specifically overdue_invoice AND user has access
+    const fetchOverdue = (!type || type === "overdue_invoice") && hasInvoiceAccess;
 
     const queries = [];
 

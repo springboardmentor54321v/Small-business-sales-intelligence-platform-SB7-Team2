@@ -12,7 +12,11 @@ const rateLimit = require("express-rate-limit");
  */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 5, // Limit each IP to 5 auth requests per windowMs
+  limit: (req) => {
+    if (req.headers["x-test-rate-limit"] === "true") return 5;
+    if (process.env.NODE_ENV === "test") return 1000;
+    return 5;
+  },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
   handler: (req, res) => {
@@ -32,7 +36,11 @@ const authLimiter = rateLimit({
  */
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100, // Limit each IP to 100 API requests per windowMs
+  limit: (req) => {
+    if (req.headers["x-test-rate-limit"] === "true") return 100;
+    if (process.env.NODE_ENV === "test") return 10000;
+    return 100;
+  },
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {

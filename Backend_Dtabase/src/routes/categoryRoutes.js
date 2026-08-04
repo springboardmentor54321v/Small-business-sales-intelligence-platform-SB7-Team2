@@ -11,8 +11,8 @@ const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// Get Categories is public to authenticated users
-router.get("/", protect, getCategories);
+// Get Categories is restricted to authorized roles
+router.get("/", protect, authorizeRoles("System Administrator", "Business Owner", "Store Manager"), getCategories);
 
 // Modify categories requires Admin (role_id 1) or Manager (role_id 2) or Owner (role_id 4)
 router.post("/", protect, authorizeRoles(1, 2, 4, "System Administrator", "Store Manager", "Business Owner"), createCategory);
