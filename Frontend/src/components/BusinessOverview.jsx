@@ -159,7 +159,7 @@ function BusinessOverview() {
             options={chartOptions}
           />
         ) : (
-          <p>No revenue data available.</p>
+          <p>No revenue data available..</p>
         )}
       </div>
 
