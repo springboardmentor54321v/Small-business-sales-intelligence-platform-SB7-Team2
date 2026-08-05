@@ -230,3 +230,7 @@ backend/uploads/
 # Logs
 *.log
 npm-debug.log*
+
+
+# Database backups
+Database/Backups/
