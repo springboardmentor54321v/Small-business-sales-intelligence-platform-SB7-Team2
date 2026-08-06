@@ -131,7 +131,7 @@ function Recommendation() {
   const filteredProducts = categoryFilter === "All" 
     ? products 
     : products.filter(p => String(p.category_id) === String(categoryFilter));
-
+console.log("Recommendation rendered");
   return (
     <div className="panel">
       <h1>📦 Product Catalog & Dynamic Recommendations</h1>

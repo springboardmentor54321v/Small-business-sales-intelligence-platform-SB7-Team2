@@ -1,3 +1,24 @@
+/* ================= THEME VARIABLES ================= */
+
+.app.dark {
+  --bg: #0f172a;
+  --sidebar: #020617;
+  --card: #111827;
+  --text: #ffffff;
+  --text-secondary: #94a3b8;
+  --accent: #38bdf8;
+  --border: #1e293b;
+}
+
+.app.light {
+  --bg: #f8fafc;
+  --sidebar: #ffffff;
+  --card: #ffffff;
+  --text: #111827;
+  --text-secondary: #475569;
+  --accent: #2563eb;
+  --border: #cbd5e1;
+}
 * {
   box-sizing: border-box;
 }
@@ -5,8 +26,8 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: white;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .login-page {
@@ -83,22 +104,24 @@ body {
 .app {
   min-height: 100vh;
   display: flex;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .sidebar {
   width: 260px;
-  background: #020617;
+  background: var(--sidebar);
   padding: 30px 20px;
-  border-right: 1px solid #1e293b;
+  border-right: 1px solid var(--border);
 }
 
 .sidebar h2 {
   margin: 0;
-  color: #38bdf8;
+  color: var(--accent);
 }
 
 .sidebar p {
-  color: #94a3b8;
+  color: var(--text-secondary);
   margin-bottom: 30px;
 }
 
@@ -111,19 +134,21 @@ body {
 .sidebar a {
   padding: 12px;
   border-radius: 10px;
-  color: #cbd5e1;
+  color: var(--text);
   cursor: pointer;
 }
 
 .sidebar a.active,
 .sidebar a:hover {
-  background: #1e293b;
-  color: #38bdf8;
+  background: var(--card);
+  color: var(--accent);
 }
 
 .main {
   flex: 1;
   padding: 30px;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .hero {
@@ -153,19 +178,18 @@ body {
 
 .card,
 .panel {
-  background: #111827;
-  border: 1px solid #1e293b;
-  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
   padding: 22px;
 }
 
 .card h3 {
-  color: #94a3b8;
+  color: var(--text-secondary);
   margin: 0;
 }
 
 .card h2 {
-  color: #38bdf8;
+  color: var(--accent);
   font-size: 30px;
 }
 
