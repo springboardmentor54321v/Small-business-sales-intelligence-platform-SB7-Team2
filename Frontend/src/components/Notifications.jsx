@@ -4,25 +4,26 @@ import "./Milestone3.css";
 
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
-  const [selectedNotification, setSelectedNotification] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [expandedInvoice, setExpandedInvoice] = useState(null);
+  const [expandedStock, setExpandedStock] = useState(null);
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem("token");
 
-const response = await api.get("/api/notifications", {
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
+        const response = await api.get("/api/notifications", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log(response.data.notifications);
 
-        setNotifications(
-          response.data.notifications || []
-        );
-      } catch (error) {
-        console.error("Notification Error:", error);
+        setNotifications(response.data.notifications || []);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -31,123 +32,168 @@ const response = await api.get("/api/notifications", {
     fetchNotifications();
   }, []);
 
+  const invoiceAlerts = notifications.filter(
+    (n) => n.type === "overdue_invoice"
+  );
+
+  const stockAlerts = notifications.filter(
+    (n) => n.type === "low_stock"
+  );
+
   if (loading) {
     return (
       <div className="page">
         <div className="page-header">
           <h1>🔔 Notifications</h1>
-          <p>Loading notifications...</p>
+          <p>Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-        <div className="page">
+    <div className="page">
 
       <div className="page-header">
         <h1>🔔 Notifications</h1>
         <p>Recent alerts and business notifications.</p>
       </div>
 
-      {notifications.length === 0 ? (
-        <div className="chart-box">
-          <h2>No Notifications</h2>
-          <p>Everything looks good. No alerts available.</p>
-        </div>
-      ) : (
-        <div className="notifications-list">
+      <div className="notifications-grid">
 
-          {notifications.map((notification) => (
+        {/* LEFT */}
+
+        <div className="notification-section">
+
+          <h2>🧾 Overdue Invoice Alerts</h2>
+
+          {invoiceAlerts.map((item) => (
 
             <div
-              key={notification.id}
+              key={item.id}
               className="notification-card"
               onClick={() =>
-                setSelectedNotification(notification)
+                setExpandedInvoice(
+                  expandedInvoice === item.id
+                    ? null
+                    : item.id
+                )
               }
             >
 
-              <h3>{notification.title}</h3>
+              <div className="notification-header">
 
-              <p>{notification.message}</p>
+                <h3>{item.title}</h3>
 
-              <small
-                style={{
-                  color: "#94a3b8",
-                  display: "block",
-                  marginTop: "10px",
-                }}
-              >
-                {new Date(notification.date).toLocaleString()}
-              </small>
+                <span>
+                  {expandedInvoice === item.id ? "▲" : "▼"}
+                </span>
+
+              </div>
+
+              {expandedInvoice === item.id && (
+
+                <div className="notification-body">
+
+                  <p>{item.message}</p>
+
+                  <small>
+                    {new Date(item.date).toLocaleString()}
+                  </small>
+
+                  {item.metadata &&
+                    Object.entries(item.metadata).map(
+                      ([key, value]) => (
+
+                        <p key={key}>
+                          <strong>
+                            {key.replace(/_/g, " ")}
+                          </strong>
+
+                          : {String(value)}
+                        </p>
+
+                      )
+                    )}
+
+                </div>
+
+              )}
 
             </div>
 
           ))}
 
         </div>
-      )}
 
-      {selectedNotification && (
+        {/* RIGHT */}
 
-        <div className="chart-box">
+        <div className="notification-section">
 
-          <h2>Notification Details</h2>
+          <h2>⚠️ Low Stock Alerts</h2>
 
-          <h3>{selectedNotification.title}</h3>
-
-          <p>{selectedNotification.message}</p>
-
-          <p>
-            <strong>Type:</strong>{" "}
-            {selectedNotification.type.replace(/_/g, " ")}
-          </p>
-
-          <p>
-            <strong>Date:</strong>{" "}
-            {new Date(
-              selectedNotification.date
-            ).toLocaleString()}
-          </p>
-
-          {selectedNotification.metadata && (
+          {stockAlerts.map((item) => (
 
             <div
-              style={{
-                marginTop: "20px",
-                paddingTop: "15px",
-                borderTop: "1px solid #334155",
-              }}
+              key={item.id}
+              className="notification-card"
+              onClick={() =>
+                setExpandedStock(
+                  expandedStock === item.id
+                    ? null
+                    : item.id
+                )
+              }
             >
 
-              <h3>Additional Information</h3>
+              <div className="notification-header">
 
-              <div
-  style={{
-    marginTop: "15px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  }}
->
-  {Object.entries(selectedNotification.metadata).map(([key, value]) => (
-    <p key={key}>
-      <strong>{key.replace(/_/g, " ")}:</strong> {String(value)}
-    </p>
-  ))}
-</div>
+                <h3>{item.title}</h3>
+
+                <span>
+                  {expandedStock === item.id ? "▲" : "▼"}
+                </span>
+
+              </div>
+
+              {expandedStock === item.id && (
+
+                <div className="notification-body">
+
+                  <p>{item.message}</p>
+
+                  <small>
+                    {new Date(item.date).toLocaleString()}
+                  </small>
+
+                  {item.metadata &&
+                    Object.entries(item.metadata).map(
+                      ([key, value]) => (
+
+                        <p key={key}>
+                          <strong>
+                            {key.replace(/_/g, " ")}
+                          </strong>
+
+                          : {String(value)}
+                        </p>
+
+                      )
+                    )}
+
+                </div>
+
+              )}
 
             </div>
 
-          )}
+          ))}
 
         </div>
 
-      )}
+      </div>
 
     </div>
-
   );
 }
 
