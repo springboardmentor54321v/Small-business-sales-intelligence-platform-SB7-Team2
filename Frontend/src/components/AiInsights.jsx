@@ -120,8 +120,8 @@ function AiInsights() {
     setRecommendations([]);
 
     try {
-      const response = await aiApi.get(`/recommend-product/${selectedProductId}`);
-      if (response.data && !response.data.message) {
+      const response = await aiApi.get(`/recommend-product/${selectedProductId}`).catch(() => null);
+      if (response && response.data && !response.data.message) {
         setRecommendations(response.data);
       } else {
         // Fallback: recommend products of similar categories
@@ -150,8 +150,8 @@ function AiInsights() {
     setAnomalyData(null);
 
     try {
-      const response = await aiApi.get(`/anomaly/${selectedOrderId}`);
-      if (response.data && !response.data.message) {
+      const response = await aiApi.get(`/anomaly/${selectedOrderId}`).catch(() => null);
+      if (response && response.data && !response.data.message) {
         setAnomalyData(Array.isArray(response.data) ? response.data[0] : response.data);
       } else {
         // Fallback mock based on order amount

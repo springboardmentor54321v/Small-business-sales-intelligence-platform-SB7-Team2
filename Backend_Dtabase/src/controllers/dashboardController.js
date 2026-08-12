@@ -105,18 +105,29 @@ exports.getDashboardData = async (req, res) => {
       total_revenue: parseFloat(row.total_revenue)
     }));
 
+    const recentSales = recentInvoices.map(row => ({
+      sale_id: row.invoice_id,
+      invoice_no: row.invoice_no,
+      customer_name: row.customer_name,
+      total_amount: row.total_amount,
+      payment_status: row.payment_status,
+      sale_date: row.invoice_date
+    }));
+
     return res.status(200).json({
       success: true,
       message: "Dashboard analytics fetched successfully",
       dashboard: {
         totalRevenue,
         totalInvoices,
+        totalSales: totalInvoices,
         paidInvoices,
         unpaidInvoices,
         partialInvoices,
         totalCustomers,
         lowStockProducts,
         recentInvoices,
+        recentSales,
         topSellingProducts
       }
     });
