@@ -137,6 +137,28 @@ test.describe("Integration Tests - Sales -> Inventory -> Invoice -> Notification
     }
   });
 
+  test.it("supports legacy /api/login and newline-normalized auth paths", async () => {
+    const legacyLoginRes = await fetch(`${BASE_URL}/api/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-test-rate-limit": "true" },
+      body: JSON.stringify({ email: testEmail, password: testPass })
+    });
+
+    const legacyLoginData = await legacyLoginRes.json();
+    assert.strictEqual(legacyLoginRes.status, 200, `Legacy login failed: ${JSON.stringify(legacyLoginData)}`);
+    assert.strictEqual(legacyLoginData.success, true);
+
+    const newlineLoginRes = await fetch(`${BASE_URL}/api/auth/login%0A%0A%0A`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-test-rate-limit": "true" },
+      body: JSON.stringify({ email: testEmail, password: testPass })
+    });
+
+    const newlineLoginData = await newlineLoginRes.json();
+    assert.strictEqual(newlineLoginRes.status, 200, `Normalized login failed: ${JSON.stringify(newlineLoginData)}`);
+    assert.strictEqual(newlineLoginData.success, true);
+  });
+
   test.it("Step 1: Check initial stock quantity is 15", async () => {
     const invRes = await pool.query("SELECT stock_quantity FROM inventory WHERE product_id = $1", [testProductId]);
     assert.strictEqual(invRes.rows[0].stock_quantity, 15, "Initial stock should be 15");

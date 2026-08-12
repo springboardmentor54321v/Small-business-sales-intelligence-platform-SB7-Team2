@@ -11,9 +11,9 @@ exports.getNotifications = async (req, res) => {
     let alerts = [];
 
     // Query user role name
-    const userRoleId = req.user?.role || req.user?.role_id;
-    const roleResult = await pool.query("SELECT role_name FROM roles WHERE role_id = $1", [userRoleId]);
-    const roleName = roleResult.rows.length > 0 ? roleResult.rows[0].role_name : "";
+    const userRoleId = req.user ? Number(req.user.role || req.user.role_id) : null;
+    const roleResult = userRoleId ? await pool.query("SELECT role_name FROM roles WHERE role_id = $1", [userRoleId]) : null;
+    const roleName = (roleResult && roleResult.rows.length > 0) ? roleResult.rows[0].role_name : "";
 
     const hasInventoryAccess = ["System Administrator", "Business Owner", "Store Manager"].includes(roleName) || userRoleId === 1;
     const hasInvoiceAccess = ["System Administrator", "Business Owner", "Sales Executive"].includes(roleName) || userRoleId === 1;

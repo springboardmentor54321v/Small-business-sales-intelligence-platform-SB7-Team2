@@ -29,6 +29,36 @@ const { errorHandler, notFoundHandler } = require("./middleware/errorMiddleware"
 >>>>>>> a6bc80d (Complete Milestone 3 backend, security, testing, and documentation)
 const app = express();
 
+// Normalize suspicious URL characters before routing to avoid 404s from malformed requests
+app.use((req, res, next) => {
+  const normalizeUrl = (value) => {
+    if (typeof value !== "string") return value;
+    let normalized = value;
+
+    try {
+      normalized = decodeURIComponent(value);
+    } catch {
+      normalized = value;
+    }
+
+    normalized = normalized.replace(/[\r\n\u0000]/g, "");
+    return normalized;
+  };
+
+  const sanitizedOriginalUrl = normalizeUrl(req.originalUrl);
+  const sanitizedUrl = normalizeUrl(req.url);
+
+  if (sanitizedOriginalUrl !== req.originalUrl) {
+    req.originalUrl = sanitizedOriginalUrl;
+  }
+
+  if (sanitizedUrl !== req.url) {
+    req.url = sanitizedUrl;
+  }
+
+  next();
+});
+
 // 1. Helmet HTTP Security Headers
 app.use(helmet());
 
@@ -85,6 +115,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/health", healthRoutes);
 
 // Auth routes (Note: authLimiter is attached inside authRoutes)
+app.use('/api', authRoutes);
 app.use('/api/auth', authRoutes);
 
 // Test Route

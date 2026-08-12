@@ -38,11 +38,11 @@ function PredictSales() {
   };
 
   return (
-    <div className="panel">
-      <h1>🔮 Sales Prediction Calculator</h1>
-      <p className="page-desc">
-        Calculate predicted future sales using our trained machine learning model based on quantities, discounts, and order date parameters.
-      </p>
+    <div className="page">
+      <div className="page-header">
+        <h1>🔮 Sales Prediction Calculator</h1>
+        <p>Calculate predicted future sales using our trained machine learning model based on quantities, discounts, and order date parameters.</p>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px", marginTop: "20px" }}>
         

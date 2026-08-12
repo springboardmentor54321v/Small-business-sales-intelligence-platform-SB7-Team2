@@ -93,124 +93,89 @@ if (!dashboardData) {
   );
 }
   const salesTrend = {
-
-  labels: (dashboardData.recentSales || []).map(
-    (sale) =>
-      new Date(sale.sale_date).toLocaleDateString()
-  ),
-
-  datasets: [
-
-    {
-
-      label: "Recent Sales",
-
-      data: (dashboardData.recentSales || []).map(
-        (sale) => sale.total_amount
-      ),
-
-      borderColor: "#38bdf8",
-
-      backgroundColor: "#38bdf8",
-
-      pointBackgroundColor: "#ffffff",
-
-      pointBorderColor: "#38bdf8",
-
-      borderWidth: 3,
-
-      tension: 0.4,
-
-    },
-
-  ],
-
-};
-
-
+    labels: (dashboardData.recentSales || []).map(
+      (sale) => new Date(sale.sale_date).toLocaleDateString()
+    ),
+    datasets: [
+      {
+        label: "Recent Sales",
+        data: (dashboardData.recentSales || []).map(
+          (sale) => sale.total_amount
+        ),
+        borderColor: "#6366f1",
+        backgroundColor: "rgba(99, 102, 241, 0.2)",
+        pointBackgroundColor: "#6366f1",
+        pointBorderColor: "#ffffff",
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+      },
+    ],
+  };
 
   const products = {
-
-  labels: (dashboardData.topSellingProducts || []).map(
-    (item) => item.product_name
-  ),
-
-  datasets: [
-
-    {
-
-      label: "Top Products",
-
-      data: (dashboardData.topSellingProducts || []).map(
-        (item) => item.total_quantity_sold
-      ),
-
-      backgroundColor: [
-        "#38bdf8",
-        "#22c55e",
-        "#facc15",
-        "#f97316",
-        "#ef4444",
-        "#8b5cf6",
-      ],
-
-      borderColor: "#ffffff",
-
-      borderWidth: 2,
-
-    },
-
-  ],
-
-};
-
-
-  const chartOptions={
-
-    plugins:{
-
-      legend:{
-
-        labels:{
-
-          color:"#ffffff"
-
-        }
-
-      }
-
-    },
-
-
-    scales:{
-
-      x:{
-
-        ticks:{
-          color:"#ffffff"
-        },
-
-        grid:{
-          color:"#334155"
-        }
-
+    labels: (dashboardData.topSellingProducts || []).map(
+      (item) => item.product_name
+    ),
+    datasets: [
+      {
+        label: "Top Products",
+        data: (dashboardData.topSellingProducts || []).map(
+          (item) => item.total_quantity_sold
+        ),
+        backgroundColor: [
+          "#6366f1",
+          "#818cf8",
+          "#a5b4fc",
+          "#c7d2fe",
+          "#e0e7ff",
+          "#4f46e5",
+        ],
+        borderColor: "rgba(255, 255, 255, 0.08)",
+        borderWidth: 2,
       },
+    ],
+  };
 
-
-      y:{
-
-        ticks:{
-          color:"#ffffff"
-        },
-
-        grid:{
-          color:"#334155"
+  const chartOptions = {
+    plugins: {
+      legend: {
+        labels: {
+          color: "#94a3b8",
+          font: {
+            family: "Inter, system-ui, sans-serif",
+            size: 11,
+            weight: "500"
+          }
         }
-
       }
-
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: "#64748b",
+          font: {
+            family: "Inter, system-ui, sans-serif",
+            size: 10
+          }
+        },
+        grid: {
+          color: "rgba(255, 255, 255, 0.03)"
+        }
+      },
+      y: {
+        ticks: {
+          color: "#64748b",
+          font: {
+            family: "Inter, system-ui, sans-serif",
+            size: 10
+          }
+        },
+        grid: {
+          color: "rgba(255, 255, 255, 0.03)"
+        }
+      }
     }
-
   };
 
 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
  .forecast-page {
   padding: 30px;
   color: var(--text);
@@ -66,8 +67,98 @@
   color: var(--text);
   margin-bottom: 25px;
   font-size: 32px;
+=======
+/* Modern Professional UI Core Styles with Theme Variable Support */
+.page {
+  padding: 32px;
+  color: var(--text-primary);
+  animation: fadeIn 0.5s ease-out;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  color: var(--text-primary);
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  letter-spacing: -0.5px;
+}
+
+.page-header p {
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+/* Glassmorphic Container Cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.card {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow);
+}
+
+.card h3 {
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.card h2 {
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.chart-box {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+>>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
+}
+
+/* Elegant Notification List System */
 .notifications-list {
   display: flex;
   flex-direction: column;
@@ -75,26 +166,69 @@
 }
 
 .notification-card {
+<<<<<<< HEAD
   background: var(--card);
+=======
+  background: var(--surface);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+>>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 18px;
+  padding: 20px;
   cursor: pointer;
-  transition: 0.2s;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.notification-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.notification-card:hover::before {
+  opacity: 1;
 }
 
 .notification-card:hover {
+<<<<<<< HEAD
   border-color: var(--accent);
+=======
+  background: var(--border-hover);
+>>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
   transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.notification-card.active {
+  background: var(--accent-muted);
+  border-color: var(--accent) !important;
+  box-shadow: var(--shadow);
 }
 
 .notification-card h3 {
+<<<<<<< HEAD
   color: var(--accent);
   margin-bottom: 8px;
+=======
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+>>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
 }
 
 .notification-card p {
   color: var(--text-secondary);
+<<<<<<< HEAD
 }
 
 @media (max-width: 1200px) {
@@ -189,4 +323,125 @@
     .notifications-grid{
         grid-template-columns:1fr;
     }
+=======
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Section Headings with Stats Counters */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.stats-badge {
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stats-badge.warning {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.stats-badge.danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Detail view spec block */
+.spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.spec-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.spec-label {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.spec-value {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Standard Spinner */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--accent-muted);
+  border-radius: 50%;
+  border-top-color: var(--accent);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Pagination Bar and Control System */
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-btn {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+>>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
 }

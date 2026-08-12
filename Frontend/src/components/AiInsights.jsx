@@ -28,15 +28,24 @@ function AiInsights() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const [custRes, prodRes, invRes] = await Promise.all([
-          api.get("/api/customers"),
-          api.get("/api/products"),
-          api.get("/api/invoices")
+        const [custRes, prodRes, salesRes] = await Promise.all([
+          api.get("/api/customers").catch((err) => {
+            console.warn("Failed to load customers:", err.message);
+            return { data: { customers: [] } };
+          }),
+          api.get("/api/products").catch((err) => {
+            console.warn("Failed to load products:", err.message);
+            return { data: { products: [] } };
+          }),
+          api.get("/api/sales?limit=100").catch((err) => {
+            console.warn("Failed to load sales transactions:", err.message);
+            return { data: { sales: [] } };
+          })
         ]);
 
         const custs = custRes.data.customers || [];
         const prods = prodRes.data.products || [];
-        const invs = invRes.data.invoices || [];
+        const invs = salesRes.data.sales || [];
 
         setCustomers(custs);
         setProducts(prods);
@@ -180,11 +189,11 @@ function AiInsights() {
   }
 
   return (
-    <div className="panel">
-      <h1>💡 AI Analytics & Insights Console</h1>
-      <p className="page-desc">
-        Trigger machine learning engines on business transactions, customer databases, and store metrics directly.
-      </p>
+    <div className="page">
+      <div className="page-header">
+        <h1>💡 AI Analytics & Insights Console</h1>
+        <p>Trigger machine learning engines on business transactions, customer databases, and store metrics directly.</p>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px", marginTop: "20px" }}>
         

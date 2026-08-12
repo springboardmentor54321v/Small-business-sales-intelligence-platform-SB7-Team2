@@ -14,8 +14,8 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: (req) => {
     if (req.headers["x-test-rate-limit"] === "true") return 5;
-    if (process.env.NODE_ENV === "test") return 1000;
-    return 5;
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") return 1000;
+    return 15;
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
@@ -32,14 +32,14 @@ const authLimiter = rateLimit({
 /**
  * Moderate Rate Limiter for Business APIs (Invoices, Payments, Products, etc.)
  * Protects server resources against denial-of-service and API scraping.
- * Limit: 100 requests per 15 minutes per IP.
+ * Limit: 1000 requests per 15 minutes per IP (raised in development).
  */
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: (req) => {
     if (req.headers["x-test-rate-limit"] === "true") return 100;
-    if (process.env.NODE_ENV === "test") return 10000;
-    return 100;
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") return 10000;
+    return 1000;
   },
   standardHeaders: true,
   legacyHeaders: false,

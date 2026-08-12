@@ -1,4 +1,5 @@
 .dashboard {
+<<<<<<< HEAD
   padding: 30px;
   color: #ffffff;
   animation: fadeIn 0.35s ease;
@@ -190,18 +191,106 @@ tbody tr:hover {
 }
 
 /* Responsive */
+=======
+  animation: fadeIn 0.4s ease-out;
+}
 
+.dashboard h1 {
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+/* Charts Grid */
+.charts {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 20px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.chart-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.chart-box h2 {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Table Card Wrapper */
+.dashboard .chart-box table {
+  margin-top: 8px;
+}
+>>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
+
+/* Loading Panel */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Empty placeholder */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  text-align: center;
+}
+
+.empty-state h2 {
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Responsive Overrides */
 @media (max-width: 1024px) {
+<<<<<<< HEAD
   .cards {
     grid-template-columns: repeat(2, 1fr);
   }
 
+=======
+>>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
   .charts {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
+<<<<<<< HEAD
   .dashboard {
     padding: 20px;
   }
@@ -259,5 +348,9 @@ tbody tr:hover {
   to {
     opacity: 1;
     transform: translateY(0);
+=======
+  .dashboard h1 {
+    font-size: 24px;
+>>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
   }
 }

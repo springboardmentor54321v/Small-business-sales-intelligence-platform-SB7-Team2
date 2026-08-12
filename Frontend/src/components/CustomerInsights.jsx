@@ -144,11 +144,11 @@ function CustomerInsights() {
   }
 
   return (
-    <div className="panel">
-      <h1>👥 Customer Relations & ML Insights</h1>
-      <p className="page-desc">
-        Perform search, manage contact details, and trigger AI segmentation and churn propensity risks on selected customer profiles.
-      </p>
+    <div className="page">
+      <div className="page-header">
+        <h1>👥 Customer Relations & ML Insights</h1>
+        <p>Perform search, manage contact details, and trigger AI segmentation and churn propensity risks on selected customer profiles.</p>
+      </div>
 
       {/* Toolbar / Search */}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
