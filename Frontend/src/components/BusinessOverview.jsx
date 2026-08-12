@@ -150,7 +150,7 @@ function BusinessOverview() {
         </div>
       </div>
 
-      <div className="chart-box large-chart">
+      <div className="chart-box large-chart" style={{ height: "420px", marginTop: "30px" }}>
         <h2>Revenue Analytics</h2>
 
         {monthlyRevenue.length > 0 ? (
