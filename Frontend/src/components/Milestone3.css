@@ -1,73 +1,3 @@
-<<<<<<< HEAD
- .forecast-page {
-  padding: 30px;
-  color: var(--text);
-}
-
-.forecast-header {
-  text-align: center;
-  margin-bottom: 35px;
-}
-
-.forecast-header h1 {
-  font-size: 46px;
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: 10px;
-}
-
-.forecast-header p {
-  font-size: 18px;
-  background: var(--card);
-}
-
-.forecast-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-bottom: 35px;
-}
-
-.forecast-card {
-  background: #111827;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 30px 20px;
-  text-align: center;
-  transition: all 0.3s ease;
-}
-
-.forecast-card:hover {
-  transform: translateY(-5px);
-  border-color: var(--accent);
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
-}
-
-.forecast-card h3 {
-  color: var(--accent);
-  font-size: 18px;
-  margin-bottom: 15px;
-}
-
-.forecast-card h2 {
-  color: var(--text);
-  font-size: 42px;
-  font-weight: bold;
-}
-
-.forecast-chart-box {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 30px;
-}
-
-.forecast-chart-box h2 {
-  text-align: center;
-  color: var(--text);
-  margin-bottom: 25px;
-  font-size: 32px;
-=======
 /* Modern Professional UI Core Styles with Theme Variable Support */
 .page {
   padding: 32px;
@@ -155,7 +85,6 @@
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
->>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
 }
 
 /* Elegant Notification List System */
@@ -166,13 +95,9 @@
 }
 
 .notification-card {
-<<<<<<< HEAD
-  background: var(--card);
-=======
   background: var(--surface);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
->>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
@@ -199,11 +124,7 @@
 }
 
 .notification-card:hover {
-<<<<<<< HEAD
-  border-color: var(--accent);
-=======
   background: var(--border-hover);
->>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
   transform: translateY(-2px);
   box-shadow: var(--shadow);
 }
@@ -215,115 +136,14 @@
 }
 
 .notification-card h3 {
-<<<<<<< HEAD
-  color: var(--accent);
-  margin-bottom: 8px;
-=======
   color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 6px;
->>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
 }
 
 .notification-card p {
   color: var(--text-secondary);
-<<<<<<< HEAD
-}
-
-@media (max-width: 1200px) {
-  .forecast-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .forecast-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .forecast-header h1 {
-    font-size: 34px;
-  }
-
-  .forecast-card h2 {
-    font-size: 34px;
-  }
-}
-
-.large-chart {
-  height: 420px;
-  margin-top: 30px;
-}
-.notifications-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:25px;
-}
-
-.notification-section{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:20px;
-}
-
-.notification-section h2{
-    text-align:center;
-    color:var(--accent);
-    margin-bottom:20px;
-}
-
-.notification-card{
-    background:#182233;
-    border:1px solid var(--border);
-    border-radius:12px;
-    margin-bottom:15px;
-    padding:15px;
-    transition:.25s;
-}
-
-.notification-card:hover{
-    border-color:var(--accent);
-}
-
-.notification-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.notification-header h3{
-    margin:0;
-    color:var(--accent);
-}
-
-.notification-header span{
-    color:var(--accent);
-    font-size:18px;
-}
-
-.notification-body{
-    margin-top:15px;
-    padding-top:15px;
-    border-top:1px solid var(--border);
-}
-
-.notification-body p{
-    color:var(--text-secondary);
-}
-
-.notification-body small{
-    color:#94a3b8;
-    display:block;
-    margin:12px 0;
-}
-
-@media(max-width:900px){
-    .notifications-grid{
-        grid-template-columns:1fr;
-    }
-=======
   font-size: 14px;
   line-height: 1.5;
 }
@@ -443,5 +263,4 @@
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
->>>>>>> 9154f5d (Updated backend and frontend files, added documentation)
 }

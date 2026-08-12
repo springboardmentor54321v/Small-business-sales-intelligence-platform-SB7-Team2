@@ -16,9 +16,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const userRoutes = require("./routes/userRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
-<<<<<<< HEAD
 const healthRoutes = require("./routes/healthRoutes");
-=======
 
 // Security & Gateway Middlewares
 const { activityLogger } = require("./middleware/activityLogger");
@@ -26,7 +24,6 @@ const sanitizerMiddleware = require("./middleware/sanitizerMiddleware");
 const { apiLimiter } = require("./middleware/rateLimiter");
 const { errorHandler, notFoundHandler } = require("./middleware/errorMiddleware");
 
->>>>>>> a6bc80d (Complete Milestone 3 backend, security, testing, and documentation)
 const app = express();
 
 // Normalize suspicious URL characters before routing to avoid 404s from malformed requests

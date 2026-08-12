@@ -134,6 +134,7 @@ test.describe("Integration Tests - Sales -> Inventory -> Invoice -> Notification
         server.close();
         console.log("Integration test server stopped.");
       }
+      await pool.end();
     }
   });
 
