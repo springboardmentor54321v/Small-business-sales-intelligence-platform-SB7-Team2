@@ -1,39 +1,63 @@
 import { useState, useEffect } from "react";
+import {
+  Package,
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Sparkles,
+  Tag,
+  IndianRupee,
+  Boxes,
+  X,
+  RefreshCw,
+  ChevronRight,
+  BrainCircuit,
+} from "lucide-react";
+
 import api, { aiApi } from "../api";
+import "./Recommendation.css";
 
 function Recommendation() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Selection & AI recommendation
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [recsLoading, setRecsLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // CRUD Forms State
   const [modalOpen, setModalOpen] = useState(false);
-  const [productForm, setProductForm] = useState({ product_name: "", category_id: "", price: "", description: "" });
+  const [productForm, setProductForm] = useState({
+    product_name: "",
+    category_id: "",
+    price: "",
+    description: "",
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
+
       const [prodRes, catRes] = await Promise.all([
         api.get("/api/products"),
-        api.get("/api/categories")
+        api.get("/api/categories"),
       ]);
+
       const prods = prodRes.data.products || [];
       const cats = catRes.data.categories || [];
-      
+
       setProducts(prods);
       setCategories(cats);
 
-      if (prods.length > 0 && !selectedProduct) {
-        setSelectedProduct(prods[0]);
+      if (prods.length > 0) {
+        setSelectedProduct((current) => current || prods[0]);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Product catalog error:", err);
     } finally {
       setLoading(false);
     }
@@ -43,30 +67,53 @@ function Recommendation() {
     fetchData();
   }, []);
 
-  // Fetch recommendations whenever product selection changes
   const fetchRecommendations = async (prod) => {
     if (!prod) return;
+
     setRecsLoading(true);
     setRecommendations([]);
 
     try {
       const id = prod.product_id;
       const response = await aiApi.get(`/recommend-product/${id}`);
+
       if (response.data && !response.data.message) {
         setRecommendations(response.data);
       } else {
-        // Fallback: recommend products of similar categories
         const matching = products
-          .filter(p => String(p.product_id) !== String(id) && p.category_id === prod.category_id)
+          .filter(
+            (p) =>
+              String(p.product_id) !== String(id) &&
+              p.category_id === prod.category_id
+          )
           .slice(0, 3);
-        setRecommendations(matching.map(p => ({
-          "Product ID": p.product_id,
-          "Product Name": p.product_name,
-          "Category": p.category_name || "General"
-        })));
+
+        setRecommendations(
+          matching.map((p) => ({
+            "Product ID": p.product_id,
+            "Product Name": p.product_name,
+            Category: p.category_name || "General",
+          }))
+        );
       }
     } catch (err) {
-      console.error(err);
+      console.error("Recommendation error:", err);
+
+      const matching = products
+        .filter(
+          (p) =>
+            String(p.product_id) !== String(prod.product_id) &&
+            p.category_id === prod.category_id
+        )
+        .slice(0, 3);
+
+      setRecommendations(
+        matching.map((p) => ({
+          "Product ID": p.product_id,
+          "Product Name": p.product_name,
+          Category: p.category_name || "General",
+        }))
+      );
     } finally {
       setRecsLoading(false);
     }
@@ -78,253 +125,628 @@ function Recommendation() {
     }
   }, [selectedProduct]);
 
-  // CRUD Handlers
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
       if (productForm.product_id) {
-        // Edit Product
-        await api.put(`/api/products/${productForm.product_id}`, productForm);
+        await api.put(
+          `/api/products/${productForm.product_id}`,
+          productForm
+        );
+
         alert("Product updated successfully!");
       } else {
-        // Create Product
         const response = await api.post("/api/products", productForm);
-        
-        // Dynamically initialize inventory record for new products
-        await api.post("/api/inventory", {
-          product_id: response.data.product.product_id,
-          quantity: 20, // Default opening stock
-          reorder_level: 5
-        }).catch(() => null);
+
+        await api
+          .post("/api/inventory", {
+            product_id: response.data.product.product_id,
+            quantity: 20,
+            reorder_level: 5,
+          })
+          .catch(() => null);
 
         alert("Product and inventory record created successfully!");
       }
+
       setModalOpen(false);
-      fetchData();
+
+      setProductForm({
+        product_name: "",
+        category_id: "",
+        price: "",
+        description: "",
+      });
+
+      await fetchData();
     } catch (err) {
-      alert(err.formattedMessage || "Failed to save product details.");
+      alert(
+        err.formattedMessage || "Failed to save product details."
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this product? All corresponding sale transactions and inventory will be locked or rejected.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this product? All corresponding sale transactions and inventory will be locked or rejected."
+      )
+    ) {
+      return;
+    }
+
     try {
       await api.delete(`/api/products/${id}`);
+
       alert("Product deleted successfully.");
-      if (selectedProduct && String(selectedProduct.product_id) === String(id)) {
+
+      if (
+        selectedProduct &&
+        String(selectedProduct.product_id) === String(id)
+      ) {
         setSelectedProduct(null);
       }
-      fetchData();
+
+      await fetchData();
     } catch (err) {
-      alert(err.formattedMessage || "Failed to delete product.");
+      alert(
+        err.formattedMessage || "Failed to delete product."
+      );
     }
   };
 
+  const openCreateModal = () => {
+    setProductForm({
+      product_name: "",
+      category_id: categories[0]?.category_id || "",
+      price: "",
+      description: "",
+    });
+
+    setModalOpen(true);
+  };
+
+  const openEditModal = (product) => {
+    setProductForm({
+      product_id: product.product_id,
+      product_name: product.product_name || "",
+      category_id: product.category_id || "",
+      price: product.price || "",
+      description: product.description || "",
+    });
+
+    setModalOpen(true);
+  };
+
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory =
+      categoryFilter === "All" ||
+      String(product.category_id) === String(categoryFilter);
+
+    const search = searchTerm.toLowerCase().trim();
+
+    const matchesSearch =
+      !search ||
+      product.product_name?.toLowerCase().includes(search) ||
+      product.category_name?.toLowerCase().includes(search);
+
+    return matchesCategory && matchesSearch;
+  });
+
   if (loading) {
-    return <div className="panel"><div className="spinner"></div><p>Synchronizing product catalog...</p></div>;
-  }
-
-  const filteredProducts = categoryFilter === "All" 
-    ? products 
-    : products.filter(p => String(p.category_id) === String(categoryFilter));
-console.log("Recommendation rendered");
-  return (
-    <div className="panel">
-      <h1>📦 Product Catalog & Dynamic Recommendations</h1>
-      <p className="page-desc">
-        Manage retail goods, categorizations, and review item recommendations frequently purchased together.
-      </p>
-
-      {/* Toolbar / Category Filter */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <label style={{ fontWeight: "bold" }}>Filter Category:</label>
-          <select 
-            value={categoryFilter} 
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #334155", background: "#020617", color: "white" }}
-          >
-            <option value="All">All Categories</option>
-            {categories.map(c => (
-              <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
-            ))}
-          </select>
+    return (
+      <div className="catalog-loading">
+        <div className="catalog-loading-icon">
+          <Package size={28} />
         </div>
 
-        <button 
-          onClick={() => {
-            setProductForm({ product_name: "", category_id: categories[0]?.category_id || "", price: "", description: "" });
-            setModalOpen(true);
-          }}
-          style={{ padding: "10px 20px", background: "#38bdf8", color: "#020617", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
+        <h2>Loading Product Catalog</h2>
+        <p>Synchronizing products and categories...</p>
+
+        <div className="catalog-spinner">
+          <RefreshCw size={18} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="catalog-page">
+      {/* PAGE HEADER */}
+      <div className="catalog-header">
+        <div>
+          <div className="catalog-eyebrow">
+            <span className="eyebrow-dot" />
+            BUSINESS OPERATIONS
+          </div>
+
+          <h1>Products Catalog</h1>
+
+          <p>
+            Manage products, pricing, categories and AI-powered
+            product recommendations.
+          </p>
+        </div>
+
+        <button
+          className="catalog-primary-button"
+          onClick={openCreateModal}
         >
+          <Plus size={18} />
           Add Product
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "24px", marginTop: "20px" }}>
-        
-        {/* Left Side: Product listing */}
-        <div className="card">
-          <h2 style={{ marginBottom: "16px", color: "#38bdf8" }}>Active Products</h2>
-          {filteredProducts.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "500px", overflowY: "auto" }}>
-              {filteredProducts.map((p) => (
-                <div 
-                  key={p.product_id}
-                  onClick={() => setSelectedProduct(p)}
-                  style={{ 
-                    background: selectedProduct?.product_id === p.product_id ? "#1e293b" : "#020617", 
-                    padding: "14px", 
-                    borderRadius: "10px", 
-                    border: "1px solid #1e293b", 
-                    cursor: "pointer", 
-                    textAlign: "left",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center"
-                  }}
-                >
-                  <div>
-                    <h3 style={{ margin: "0 0 4px", fontSize: "16px", color: "#f8fafc" }}>{p.product_name}</h3>
-                    <span style={{ fontSize: "11px", color: "#38bdf8", background: "rgba(56, 189, 248, 0.1)", padding: "2px 6px", borderRadius: "4px" }}>
-                      {p.category_name || "Uncategorized"}
-                    </span>
-                  </div>
-                  
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ fontWeight: "bold", color: "#22c55e" }}>₹{parseFloat(p.price).toLocaleString("en-IN")}</span>
-                    <div style={{ display: "flex", gap: "4px" }} onClick={(e) => e.stopPropagation()}>
-                      <button 
-                        onClick={() => {
-                          setProductForm(p);
-                          setModalOpen(true);
-                        }}
-                        style={{ padding: "4px 8px", background: "#f59e0b", border: "none", borderRadius: "4px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", color: "#020617" }}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(p.product_id)}
-                        style={{ padding: "4px 8px", background: "#ef4444", border: "none", borderRadius: "4px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", color: "white" }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ color: "#64748b" }}>No products registered in catalog.</p>
-          )}
+      {/* TOOLBAR */}
+      <div className="catalog-toolbar">
+        <div className="catalog-search">
+          <Search size={18} />
+
+          <input
+            type="text"
+            placeholder="Search products or categories..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
 
-        {/* Right Side: Recommendation insights */}
-        <div className="card" style={{ textAlign: "left", padding: "24px" }}>
-          {selectedProduct ? (
-            <div>
-              <h2 style={{ borderBottom: "1px solid #1e293b", paddingBottom: "10px", color: "#38bdf8", margin: "0 0 16px" }}>
-                Product details
-              </h2>
+        <div className="catalog-filter">
+          <Tag size={17} />
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px", marginBottom: "24px" }}>
-                <div><span style={{ color: "#94a3b8" }}>Barcode Reference:</span> <strong>#{selectedProduct.product_id}</strong></div>
-                <div><span style={{ color: "#94a3b8" }}>Group classification:</span> <strong>{selectedProduct.category_name || "General"}</strong></div>
-                <div><span style={{ color: "#94a3b8" }}>Unit retail price:</span> <strong style={{ color: "#22c55e" }}>₹{parseFloat(selectedProduct.price).toLocaleString("en-IN")}</strong></div>
-                <div><span style={{ color: "#94a3b8" }}>Features & description:</span> <strong>{selectedProduct.description || "N/A"}</strong></div>
-              </div>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="All">All Categories</option>
 
-              <h2 style={{ borderBottom: "1px solid #1e293b", paddingBottom: "10px", color: "#38bdf8", margin: "0 0 16px" }}>
-                Frequently Purchased Together
-              </h2>
+            {categories.map((category) => (
+              <option
+                key={category.category_id}
+                value={category.category_id}
+              >
+                {category.category_name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-              {recsLoading ? (
-                <div style={{ textAlign: "center", padding: "20px 0" }}><div className="spinner"></div></div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {recommendations.length > 0 ? (
-                    recommendations.map((item, idx) => (
-                      <div key={idx} style={{ background: "#020617", padding: "10px 14px", borderRadius: "8px", border: "1px solid #1e293b", fontSize: "13px", display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ fontWeight: "bold", color: "#f8fafc" }}>{item["Product Name"]}</span>
-                        <span style={{ color: "#38bdf8" }}>{item["Category"]}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p style={{ color: "#64748b", fontSize: "13px" }}>No associations registered for this catalog item.</p>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <p style={{ color: "#64748b" }}>Select a catalog item to render recommended matching goods.</p>
-          )}
+        <button
+          className="catalog-refresh-button"
+          onClick={fetchData}
+          title="Refresh catalog"
+        >
+          <RefreshCw size={17} />
+        </button>
+      </div>
+
+      {/* SUMMARY */}
+      <div className="catalog-summary">
+        <div className="catalog-summary-item">
+          <div className="summary-icon blue">
+            <Package size={18} />
+          </div>
+
+          <div>
+            <span>Total Products</span>
+            <strong>{products.length}</strong>
+          </div>
+        </div>
+
+        <div className="catalog-summary-item">
+          <div className="summary-icon green">
+            <Tag size={18} />
+          </div>
+
+          <div>
+            <span>Categories</span>
+            <strong>{categories.length}</strong>
+          </div>
+        </div>
+
+        <div className="catalog-summary-item">
+          <div className="summary-icon purple">
+            <BrainCircuit size={18} />
+          </div>
+
+          <div>
+            <span>AI Recommendations</span>
+            <strong>{recommendations.length}</strong>
+          </div>
         </div>
       </div>
 
-      {/* CRUD DIALOG */}
-      {modalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 100 }}>
-          <form onSubmit={handleProductSubmit} className="card" style={{ width: "400px", display: "flex", flexDirection: "column", gap: "16px", textAlign: "left", padding: "30px" }}>
-            <h2 style={{ color: "#38bdf8" }}>{productForm.product_id ? "Update Product Details" : "Register Product"}</h2>
-            
+      {/* MAIN CONTENT */}
+      <div className="catalog-layout">
+        {/* PRODUCT LIST */}
+        <section className="catalog-panel">
+          <div className="panel-heading">
             <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Product Name</label>
-              <input 
+              <span className="panel-eyebrow">
+                PRODUCT INVENTORY
+              </span>
+
+              <h2>Active Products</h2>
+            </div>
+
+            <span className="product-count">
+              {filteredProducts.length} items
+            </span>
+          </div>
+
+          {filteredProducts.length > 0 ? (
+            <div className="product-list">
+              {filteredProducts.map((product) => {
+                const isSelected =
+                  selectedProduct?.product_id === product.product_id;
+
+                return (
+                  <div
+                    key={product.product_id}
+                    className={`product-row ${
+                      isSelected ? "selected" : ""
+                    }`}
+                    onClick={() => setSelectedProduct(product)}
+                  >
+                    <div className="product-row-icon">
+                      <Package size={20} />
+                    </div>
+
+                    <div className="product-row-info">
+                      <h3>{product.product_name}</h3>
+
+                      <span>
+                        {product.category_name ||
+                          "Uncategorized"}
+                      </span>
+                    </div>
+
+                    <div className="product-row-price">
+                      <span>Unit Price</span>
+                      <strong>
+                        ₹
+                        {Number(product.price || 0).toLocaleString(
+                          "en-IN"
+                        )}
+                      </strong>
+                    </div>
+
+                    <div
+                      className="product-row-actions"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        className="icon-action edit"
+                        onClick={() => openEditModal(product)}
+                        title="Edit product"
+                      >
+                        <Pencil size={15} />
+                      </button>
+
+                      <button
+                        className="icon-action delete"
+                        onClick={() =>
+                          handleDelete(product.product_id)
+                        }
+                        title="Delete product"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+
+                      <ChevronRight
+                        className="row-chevron"
+                        size={18}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="catalog-empty">
+              <Package size={34} />
+
+              <h3>No products found</h3>
+
+              <p>
+                Try changing your search or category filter.
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* DETAILS + AI */}
+        <aside className="catalog-side">
+          {selectedProduct ? (
+            <>
+              {/* PRODUCT DETAILS */}
+              <section className="catalog-panel details-panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="panel-eyebrow">
+                      SELECTED PRODUCT
+                    </span>
+
+                    <h2>{selectedProduct.product_name}</h2>
+                  </div>
+
+                  <div className="selected-product-icon">
+                    <Package size={22} />
+                  </div>
+                </div>
+
+                <div className="detail-price">
+                  <span>Unit Retail Price</span>
+
+                  <strong>
+                    ₹
+                    {Number(
+                      selectedProduct.price || 0
+                    ).toLocaleString("en-IN")}
+                  </strong>
+                </div>
+
+                <div className="details-grid">
+                  <div className="detail-item">
+                    <span>Product ID</span>
+                    <strong>
+                      #{selectedProduct.product_id}
+                    </strong>
+                  </div>
+
+                  <div className="detail-item">
+                    <span>Category</span>
+                    <strong>
+                      {selectedProduct.category_name ||
+                        "General"}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="description-box">
+                  <span>Description</span>
+
+                  <p>
+                    {selectedProduct.description ||
+                      "No product description available."}
+                  </p>
+                </div>
+
+                <button
+                  className="edit-product-button"
+                  onClick={() =>
+                    openEditModal(selectedProduct)
+                  }
+                >
+                  <Pencil size={16} />
+                  Edit Product
+                </button>
+              </section>
+
+              {/* AI RECOMMENDATIONS */}
+              <section className="catalog-panel ai-panel">
+                <div className="ai-heading">
+                  <div className="ai-icon">
+                    <Sparkles size={20} />
+                  </div>
+
+                  <div>
+                    <span className="panel-eyebrow">
+                      AI INTELLIGENCE
+                    </span>
+
+                    <h2>Frequently Purchased Together</h2>
+                  </div>
+                </div>
+
+                <p className="ai-description">
+                  AI-powered product associations based on the
+                  selected catalog item.
+                </p>
+
+                {recsLoading ? (
+                  <div className="recommendation-loading">
+                    <RefreshCw size={20} />
+                    <span>Generating recommendations...</span>
+                  </div>
+                ) : recommendations.length > 0 ? (
+                  <div className="recommendation-list">
+                    {recommendations.map((item, index) => (
+                      <div
+                        className="recommendation-row"
+                        key={index}
+                      >
+                        <div className="recommendation-number">
+                          {index + 1}
+                        </div>
+
+                        <div className="recommendation-info">
+                          <strong>
+                            {item["Product Name"]}
+                          </strong>
+
+                          <span>
+                            {item["Category"] ||
+                              "General"}
+                          </span>
+                        </div>
+
+                        <Sparkles size={16} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="recommendation-empty">
+                    <BrainCircuit size={24} />
+
+                    <p>
+                      No product associations are currently
+                      available.
+                    </p>
+                  </div>
+                )}
+              </section>
+            </>
+          ) : (
+            <section className="catalog-panel select-product-panel">
+              <Package size={40} />
+
+              <h2>Select a Product</h2>
+
+              <p>
+                Choose a product from the catalog to view its
+                details and AI recommendations.
+              </p>
+            </section>
+          )}
+        </aside>
+      </div>
+
+      {/* MODAL */}
+      {modalOpen && (
+        <div
+          className="product-modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setModalOpen(false);
+            }
+          }}
+        >
+          <form
+            className="product-modal"
+            onSubmit={handleProductSubmit}
+          >
+            <div className="modal-header">
+              <div>
+                <span className="panel-eyebrow">
+                  PRODUCT MANAGEMENT
+                </span>
+
+                <h2>
+                  {productForm.product_id
+                    ? "Update Product"
+                    : "Add New Product"}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setModalOpen(false)}
+              >
+                <X size={19} />
+              </button>
+            </div>
+
+            <div className="form-group">
+              <label>Product Name</label>
+
+              <input
                 value={productForm.product_name}
-                onChange={(e) => setProductForm({ ...productForm, product_name: e.target.value })}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
+                onChange={(e) =>
+                  setProductForm({
+                    ...productForm,
+                    product_name: e.target.value,
+                  })
+                }
+                placeholder="Enter product name"
                 required
               />
             </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Category</label>
-              <select 
+            <div className="form-group">
+              <label>Category</label>
+
+              <select
                 value={productForm.category_id}
-                onChange={(e) => setProductForm({ ...productForm, category_id: e.target.value })}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
+                onChange={(e) =>
+                  setProductForm({
+                    ...productForm,
+                    category_id: e.target.value,
+                  })
+                }
                 required
               >
-                {categories.map(c => (
-                  <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
+                {categories.map((category) => (
+                  <option
+                    key={category.category_id}
+                    value={category.category_id}
+                  >
+                    {category.category_name}
+                  </option>
                 ))}
               </select>
             </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Retail Price (₹)</label>
-              <input 
-                type="number"
-                step="0.01"
-                min="0"
-                value={productForm.price}
-                onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
-                required
-              />
+            <div className="form-group">
+              <label>Retail Price (₹)</label>
+
+              <div className="price-input">
+                <IndianRupee size={16} />
+
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={productForm.price}
+                  onChange={(e) =>
+                    setProductForm({
+                      ...productForm,
+                      price: e.target.value,
+                    })
+                  }
+                  placeholder="0.00"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Description</label>
-              <textarea 
-                rows="3"
+            <div className="form-group">
+              <label>Description</label>
+
+              <textarea
+                rows="4"
                 value={productForm.description}
-                onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white", fontFamily: "inherit" }}
+                onChange={(e) =>
+                  setProductForm({
+                    ...productForm,
+                    description: e.target.value,
+                  })
+                }
+                placeholder="Describe the product..."
               />
             </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-              <button type="submit" disabled={submitting} style={{ flex: 1, background: "#38bdf8", color: "#020617", fontWeight: "bold", padding: "12px", borderRadius: "8px", border: "none", cursor: "pointer" }}>
-                {submitting ? "Saving..." : "Save Product"}
-              </button>
-              <button type="button" onClick={() => setModalOpen(false)} style={{ flex: 1, background: "#334155", color: "white", padding: "12px", borderRadius: "8px", border: "none", cursor: "pointer" }}>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="modal-cancel"
+                onClick={() => setModalOpen(false)}
+              >
                 Cancel
+              </button>
+
+              <button
+                type="submit"
+                className="modal-save"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <RefreshCw size={16} />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Plus size={16} />
+                    {productForm.product_id
+                      ? "Update Product"
+                      : "Save Product"}
+                  </>
+                )}
               </button>
             </div>
           </form>

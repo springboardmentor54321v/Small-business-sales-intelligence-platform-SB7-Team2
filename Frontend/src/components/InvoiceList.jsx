@@ -1,42 +1,45 @@
 import { useState, useEffect } from "react";
+import {
+  Search,
+  Eye,
+  Trash2,
+  FileText,
+  Receipt,
+  CheckCircle2,
+  Clock3,
+  AlertCircle,
+  X,
+  CalendarDays,
+  UserRound,
+  CreditCard,
+} from "lucide-react";
 import api from "../api";
-import "./Milestone3.css";
+import "./InvoiceList.css";
 
 function InvoiceList() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filters and Search States
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeSearch, setActiveSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [limit] = useState(10);
 
-  // Detailed Modal View
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
 
   const fetchInvoices = async () => {
-    setLoading(true);
     try {
-      const response = await api.get("/api/invoices", {
-        params: {
-          search: activeSearch || undefined,
-          payment_status: statusFilter === "All" ? undefined : statusFilter,
-          page,
-          limit
-        }
-      });
+      setError(null);
+
+      const response = await api.get("/api/invoices");
+
       setInvoices(response.data.invoices || []);
-      setTotalPages(response.data.pagination?.totalPages || 1);
-      setTotalItems(response.data.pagination?.totalItems || 0);
     } catch (err) {
       console.error(err);
-      setError(err.formattedMessage || "Failed to retrieve invoice records.");
+      setError(
+        err.formattedMessage ||
+          "Failed to retrieve invoice records."
+      );
     } finally {
       setLoading(false);
     }
@@ -44,309 +47,651 @@ function InvoiceList() {
 
   useEffect(() => {
     fetchInvoices();
-  }, [page, statusFilter, activeSearch]);
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setPage(1);
-    setActiveSearch(searchTerm);
-  };
-
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setActiveSearch("");
-    setPage(1);
-  };
+  }, []);
 
   const handleOpenDetails = async (invoiceId) => {
     setModalLoading(true);
+
     try {
-      const response = await api.get(`/api/invoices/${invoiceId}`);
+      const response = await api.get(
+        `/api/invoices/${invoiceId}`
+      );
+
       setSelectedInvoice(response.data.invoice);
     } catch (err) {
-      alert(err.formattedMessage || "Failed to load invoice items details.");
+      alert(
+        err.formattedMessage ||
+          "Failed to load invoice item details."
+      );
     } finally {
       setModalLoading(false);
     }
   };
 
   const handleDeleteInvoice = async (invoiceId) => {
-    if (!confirm("Are you sure you want to delete this invoice? This will restore corresponding inventory stock quantities!")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this invoice? This will restore corresponding inventory stock quantities!"
+      )
+    ) {
+      return;
+    }
+
     try {
       await api.delete(`/api/invoices/${invoiceId}`);
+
       alert("Invoice deleted successfully.");
+
       setSelectedInvoice(null);
       fetchInvoices();
     } catch (err) {
-      alert(err.formattedMessage || "Failed to delete invoice.");
+      alert(
+        err.formattedMessage ||
+          "Failed to delete invoice."
+      );
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusClass = (status) => {
     switch (status) {
       case "Paid":
-        return "#22c55e";
+        return "status-paid";
       case "Unpaid":
-        return "#ef4444";
+        return "status-unpaid";
       case "Partial":
-        return "#f59e0b";
+        return "status-partial";
       default:
-        return "#6b7280";
+        return "status-default";
     }
   };
 
-  return (
-    <div className="page">
-      <div className="page-header">
-        <h1>📋 Accounts Invoice Ledger</h1>
-        <p>Review customer billing accounts, inspect purchased product items, download transaction receipts, or manage outstanding invoices.</p>
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "Paid":
+        return <CheckCircle2 size={13} />;
+      case "Unpaid":
+        return <AlertCircle size={13} />;
+      case "Partial":
+        return <Clock3 size={13} />;
+      default:
+        return null;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="invoice-loading">
+        <div className="invoice-loading-spinner" />
+        <span>Synchronizing invoice records...</span>
       </div>
+    );
+  }
 
-      {error && (
-        <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", color: "#fecaca", padding: "16px", borderRadius: "12px", marginBottom: "24px" }}>
-          Error: {error}
+  const filteredInvoices = invoices.filter((inv) => {
+    const invoiceNumber =
+      inv.invoice_no?.toLowerCase() || "";
+
+    const customerName =
+      inv.customer_name?.toLowerCase() || "";
+
+    const search = searchTerm.toLowerCase();
+
+    const matchesStatus =
+      statusFilter === "All" ||
+      inv.payment_status === statusFilter;
+
+    const matchesSearch =
+      invoiceNumber.includes(search) ||
+      customerName.includes(search);
+
+    return matchesStatus && matchesSearch;
+  });
+
+  const totalInvoices = invoices.length;
+
+  const paidInvoices = invoices.filter(
+    (invoice) => invoice.payment_status === "Paid"
+  ).length;
+
+  const unpaidInvoices = invoices.filter(
+    (invoice) => invoice.payment_status === "Unpaid"
+  ).length;
+
+  const totalRevenue = invoices.reduce(
+    (sum, invoice) =>
+      sum + Number(invoice.total_amount || 0),
+    0
+  );
+
+  return (
+    <div className="invoice-page">
+
+      {/* HEADER */}
+      <section className="invoice-header">
+        <div>
+          <span className="invoice-eyebrow">
+            FINANCE OPERATIONS
+          </span>
+
+          <h1>Invoice Management</h1>
+
+          <p>
+            Review billing records, payment status and
+            transaction details from one centralized workspace.
+          </p>
         </div>
-      )}
 
-      {/* Toolbar Filters and Search */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: "20px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: "8px", flex: 1, maxWidth: "420px" }}>
-          <input 
-            placeholder="Search by invoice number or client..."
+        <div className="invoice-header-status">
+          <span />
+          LEDGER SYNCHRONIZED
+        </div>
+      </section>
+
+      {/* SUMMARY */}
+      <section className="invoice-summary-grid">
+
+        <div className="invoice-summary-card">
+          <div className="invoice-summary-icon blue">
+            <Receipt size={19} />
+          </div>
+
+          <div>
+            <span>Total Invoices</span>
+            <strong>{totalInvoices}</strong>
+          </div>
+        </div>
+
+        <div className="invoice-summary-card">
+          <div className="invoice-summary-icon green">
+            <CheckCircle2 size={19} />
+          </div>
+
+          <div>
+            <span>Paid Invoices</span>
+            <strong>{paidInvoices}</strong>
+          </div>
+        </div>
+
+        <div className="invoice-summary-card">
+          <div className="invoice-summary-icon red">
+            <AlertCircle size={19} />
+          </div>
+
+          <div>
+            <span>Unpaid Invoices</span>
+            <strong>{unpaidInvoices}</strong>
+          </div>
+        </div>
+
+        <div className="invoice-summary-card">
+          <div className="invoice-summary-icon purple">
+            <CreditCard size={19} />
+          </div>
+
+          <div>
+            <span>Total Billed</span>
+            <strong>
+              ₹{totalRevenue.toLocaleString("en-IN")}
+            </strong>
+          </div>
+        </div>
+
+      </section>
+
+      {/* TOOLBAR */}
+      <section className="invoice-toolbar">
+
+        <div className="invoice-search">
+          <Search size={16} />
+
+          <input
+            type="text"
+            placeholder="Search invoice number or customer..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: "10px 14px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.08)", background: "rgba(15, 23, 42, 0.6)", color: "white", flex: 1, fontSize: "14px" }}
+            onChange={(e) =>
+              setSearchTerm(e.target.value)
+            }
           />
-          <button 
-            type="submit" 
-            style={{ padding: "10px 16px", background: "#38bdf8", color: "#020617", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "14px" }}
-          >
-            Search
-          </button>
-          {activeSearch && (
-            <button 
-              type="button" 
-              onClick={handleClearSearch}
-              style={{ padding: "10px 16px", background: "#1e293b", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "14px" }}
+
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              className="clear-search"
             >
-              Clear
+              <X size={14} />
             </button>
           )}
-        </form>
-
-        <div style={{ display: "flex", gap: "8px" }}>
-          {["All", "Paid", "Unpaid", "Partial"].map((status) => (
-            <button
-              key={status}
-              onClick={() => { setStatusFilter(status); setPage(1); }}
-              style={{ 
-                padding: "10px 16px", 
-                background: statusFilter === status ? "rgba(56, 189, 248, 0.15)" : "#1e293b", 
-                color: statusFilter === status ? "#38bdf8" : "#cbd5e1", 
-                border: statusFilter === status ? "1px solid #38bdf8" : "1px solid rgba(255, 255, 255, 0.08)", 
-                borderRadius: "8px", 
-                fontWeight: "bold",
-                cursor: "pointer",
-                fontSize: "13px",
-                transition: "all 0.2s"
-              }}
-            >
-              {status}
-            </button>
-          ))}
         </div>
-      </div>
 
-      {/* Main Invoices Table Card */}
-      <div className="card" style={{ padding: "0px", overflow: "hidden" }}>
-        {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 0" }}>
-            <div className="spinner"></div>
-            <p style={{ color: "#94a3b8", marginTop: "12px", fontSize: "14px" }}>Synchronizing ledger entries...</p>
+        <div className="invoice-filter-group">
+          {["All", "Paid", "Unpaid", "Partial"].map(
+            (status) => (
+              <button
+                key={status}
+                type="button"
+                className={
+                  statusFilter === status
+                    ? "invoice-filter active"
+                    : "invoice-filter"
+                }
+                onClick={() =>
+                  setStatusFilter(status)
+                }
+              >
+                {status}
+              </button>
+            )
+          )}
+        </div>
+
+      </section>
+
+      {/* ERROR */}
+      {error && (
+        <div className="invoice-error">
+          <AlertCircle size={17} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* TABLE */}
+      <section className="invoice-table-card">
+
+        <div className="invoice-table-header">
+          <div>
+            <span className="invoice-section-label">
+              BILLING RECORDS
+            </span>
+
+            <h2>Invoice Ledger</h2>
+
+            <p>
+              {filteredInvoices.length} invoice
+              {filteredInvoices.length !== 1
+                ? "s"
+                : ""}{" "}
+              matching current filters
+            </p>
           </div>
-        ) : invoices.length > 0 ? (
-          <>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                <thead>
-                  <tr style={{ background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <th style={{ padding: "16px 20px", color: "#94a3b8", fontSize: "13px", fontWeight: "600", textTransform: "uppercase" }}>Invoice No</th>
-                    <th style={{ padding: "16px 20px", color: "#94a3b8", fontSize: "13px", fontWeight: "600", textTransform: "uppercase" }}>Client Customer</th>
-                    <th style={{ padding: "16px 20px", color: "#94a3b8", fontSize: "13px", fontWeight: "600", textTransform: "uppercase" }}>Billed On</th>
-                    <th style={{ padding: "16px 20px", color: "#94a3b8", fontSize: "13px", fontWeight: "600", textTransform: "uppercase" }}>Total Amount</th>
-                    <th style={{ padding: "16px 20px", color: "#94a3b8", fontSize: "13px", fontWeight: "600", textTransform: "uppercase" }}>Tax Billed</th>
-                    <th style={{ padding: "16px 20px", color: "#94a3b8", fontSize: "13px", fontWeight: "600", textTransform: "uppercase" }}>Payment Status</th>
-                    <th style={{ padding: "16px 20px", color: "#94a3b8", fontSize: "13px", fontWeight: "600", textTransform: "uppercase" }}>Created By</th>
-                    <th style={{ padding: "16px 20px", color: "#94a3b8", fontSize: "13px", fontWeight: "600", textTransform: "uppercase" }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoices.map((inv) => (
-                    <tr key={inv.invoice_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", transition: "background 0.2s" }} className="table-row-hover">
-                      <td style={{ padding: "16px 20px", fontWeight: "bold", color: "#38bdf8" }}>{inv.invoice_no}</td>
-                      <td style={{ padding: "16px 20px", color: "#cbd5e1" }}>{inv.customer_name || "Walk-in Customer"}</td>
-                      <td style={{ padding: "16px 20px" }}>{new Date(inv.invoice_date).toLocaleDateString()}</td>
-                      <td style={{ padding: "16px 20px", fontWeight: "bold", color: "#f8fafc" }}>₹{parseFloat(inv.total_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
-                      <td style={{ padding: "16px 20px" }}>₹{parseFloat(inv.tax || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
-                      <td style={{ padding: "16px 20px" }}>
-                        <span
-                          style={{
-                            background: `${getStatusColor(inv.payment_status)}20`,
-                            color: getStatusColor(inv.payment_status),
-                            border: `1px solid ${getStatusColor(inv.payment_status)}40`,
-                            padding: "4px 10px",
-                            borderRadius: "12px",
-                            fontWeight: "700",
-                            fontSize: "11px"
-                          }}
-                        >
-                          {inv.payment_status}
+
+          <FileText size={21} />
+        </div>
+
+        {filteredInvoices.length > 0 ? (
+          <div className="invoice-table-wrapper">
+            <table className="invoice-table">
+              <thead>
+                <tr>
+                  <th>Invoice</th>
+                  <th>Customer</th>
+                  <th>Billing Date</th>
+                  <th>Total Amount</th>
+                  <th>Tax</th>
+                  <th>Status</th>
+                  <th>Created By</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredInvoices.map((inv) => (
+                  <tr key={inv.invoice_id}>
+
+                    <td>
+                      <span className="invoice-number">
+                        {inv.invoice_no}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="customer-cell">
+                        <div className="customer-avatar">
+                          <UserRound size={14} />
+                        </div>
+
+                        <span>
+                          {inv.customer_name ||
+                            "Walk-in customer"}
                         </span>
-                      </td>
-                      <td style={{ padding: "16px 20px", fontSize: "12px", color: "#64748b" }}>{inv.user_name || "Sales Clerk"}</td>
-                      <td style={{ padding: "16px 20px" }}>
-                        <button 
-                          onClick={() => handleOpenDetails(inv.invoice_id)}
-                          style={{ padding: "6px 14px", background: "rgba(56, 189, 248, 0.1)", color: "#38bdf8", border: "1px solid rgba(56, 189, 248, 0.2)", borderRadius: "8px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
-                          onMouseEnter={(e) => { e.target.style.background = "#38bdf8"; e.target.style.color = "#020617"; }}
-                          onMouseLeave={(e) => { e.target.style.background = "rgba(56, 189, 248, 0.1)"; e.target.style.color = "#38bdf8"; }}
-                        >
-                          Inspect Items
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </td>
+
+                    <td>
+                      <div className="date-cell">
+                        <CalendarDays size={13} />
+
+                        {new Date(
+                          inv.invoice_date
+                        ).toLocaleDateString()}
+                      </div>
+                    </td>
+
+                    <td>
+                      <strong className="amount-cell">
+                        ₹
+                        {Number(
+                          inv.total_amount || 0
+                        ).toLocaleString("en-IN")}
+                      </strong>
+                    </td>
+
+                    <td>
+                      ₹
+                      {Number(
+                        inv.tax || 0
+                      ).toLocaleString("en-IN")}
+                    </td>
+
+                    <td>
+                      <span
+                        className={`invoice-status ${getStatusClass(
+                          inv.payment_status
+                        )}`}
+                      >
+                        {getStatusIcon(
+                          inv.payment_status
+                        )}
+
+                        {inv.payment_status}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span className="created-by">
+                        {inv.user_name || "Sales Clerk"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <button
+                        type="button"
+                        className="inspect-button"
+                        onClick={() =>
+                          handleOpenDetails(
+                            inv.invoice_id
+                          )
+                        }
+                      >
+                        <Eye size={14} />
+                        View
+                      </button>
+                    </td>
+
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="invoice-empty">
+            <div className="invoice-empty-icon">
+              <FileText size={24} />
             </div>
 
-            {/* Pagination Controls */}
-            <div className="pagination-bar" style={{ padding: "16px 20px" }}>
-              <span className="page-indicator">
-                Showing Page <strong>{page}</strong> of <strong>{totalPages || 1}</strong> ({totalItems} items total)
-              </span>
-              <div className="pagination-controls">
-                <button 
-                  className="pagination-btn"
-                  disabled={page <= 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Previous
-                </button>
-                <button 
-                  className="pagination-btn"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
-            <h3>No invoice records found.</h3>
-            <p>Try matching another search keyword or verify sync connections.</p>
+            <h3>No invoices found</h3>
+
+            <p>
+              No invoice records match your current
+              search and filter criteria.
+            </p>
           </div>
         )}
-      </div>
 
-      {/* Detailed Modal view */}
+      </section>
+
+      {/* DETAILS MODAL */}
       {selectedInvoice && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 100, backdropFilter: "blur(6px)" }}>
-          <div className="card" style={{ width: "620px", textAlign: "left", padding: "30px", maxHeight: "85vh", overflowY: "auto", background: "rgba(15, 23, 42, 0.95)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "16px", marginBottom: "20px", alignItems: "center" }}>
-              <h2 style={{ color: "#38bdf8", margin: 0, fontSize: "20px", fontWeight: "700" }}>Invoice #{selectedInvoice.invoice_no}</h2>
-              <span style={{ 
-                background: `${getStatusColor(selectedInvoice.payment_status)}20`, 
-                color: getStatusColor(selectedInvoice.payment_status), 
-                border: `1px solid ${getStatusColor(selectedInvoice.payment_status)}40`,
-                padding: "6px 12px", 
-                borderRadius: "12px", 
-                fontWeight: "700",
-                fontSize: "12px"
-              }}>
-                {selectedInvoice.payment_status}
-              </span>
-            </div>
+        <div
+          className="invoice-modal-overlay"
+          onClick={() => setSelectedInvoice(null)}
+        >
+          <div
+            className="invoice-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", fontSize: "13px", marginBottom: "24px", color: "#cbd5e1" }}>
+            <div className="invoice-modal-header">
               <div>
-                <span style={{ color: "#64748b", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.5px" }}>Client Customer:</span><br/>
-                <strong style={{ color: "white" }}>{selectedInvoice.customer_name}</strong> ({selectedInvoice.customer_email || "No email"})
-              </div>
-              <div>
-                <span style={{ color: "#64748b", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.5px" }}>Order Clerk:</span><br/>
-                <strong style={{ color: "white" }}>{selectedInvoice.user_name || "System"}</strong>
-              </div>
-              <div>
-                <span style={{ color: "#64748b", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.5px" }}>Billing Date:</span><br/>
-                <strong style={{ color: "white" }}>{new Date(selectedInvoice.invoice_date).toLocaleDateString()}</strong>
-              </div>
-              <div>
-                <span style={{ color: "#64748b", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.5px" }}>Payment Due Date:</span><br/>
-                <strong style={{ color: "#ef4444" }}>{new Date(selectedInvoice.due_date).toLocaleDateString()}</strong>
-              </div>
-            </div>
+                <span className="invoice-section-label">
+                  INVOICE DETAILS
+                </span>
 
-            <h3 style={{ color: "#38bdf8", fontSize: "14px", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "1px" }}>Order Line Items</h3>
-            <div style={{ background: "rgba(15, 23, 42, 0.4)", border: "1px solid rgba(255,255,255,0.03)", borderRadius: "8px", overflow: "hidden", marginBottom: "20px" }}>
-              <table style={{ background: "transparent", fontSize: "13px", width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ background: "rgba(255,255,255,0.01)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <th style={{ padding: "10px 14px", textAlign: "left", color: "#64748b" }}>Product Label</th>
-                    <th style={{ padding: "10px 14px", textAlign: "left", color: "#64748b" }}>Quantity</th>
-                    <th style={{ padding: "10px 14px", textAlign: "left", color: "#64748b" }}>Unit Price</th>
-                    <th style={{ padding: "10px 14px", textAlign: "left", color: "#64748b" }}>Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedInvoice.items && selectedInvoice.items.map((item, idx) => (
-                    <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                      <td style={{ padding: "10px 14px", fontWeight: "bold", color: "#f8fafc" }}>{item.product_name}</td>
-                      <td style={{ padding: "10px 14px" }}>{item.quantity} units</td>
-                      <td style={{ padding: "10px 14px" }}>₹{parseFloat(item.unit_price).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
-                      <td style={{ padding: "10px 14px", fontWeight: "bold" }}>₹{parseFloat(item.subtotal).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                <h2>
+                  #{selectedInvoice.invoice_no}
+                </h2>
+              </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "16px", alignItems: "flex-end", marginBottom: "24px" }}>
-              <div><span style={{ color: "#64748b" }}>Subtotal:</span> <strong style={{ color: "white" }}>₹{parseFloat(selectedInvoice.subtotal).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></div>
-              <div><span style={{ color: "#64748b" }}>GST Tax (18%):</span> <strong style={{ color: "white" }}>₹{parseFloat(selectedInvoice.tax || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></div>
-              <div><span style={{ color: "#64748b" }}>Discount:</span> <strong style={{ color: "white" }}>-₹{parseFloat(selectedInvoice.discount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></div>
-              <div style={{ fontSize: "16px", color: "#22c55e", fontWeight: "bold", marginTop: "4px" }}>
-                Grand Total: ₹{parseFloat(selectedInvoice.total_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              <div className="modal-header-actions">
+
+                <span
+                  className={`invoice-status ${getStatusClass(
+                    selectedInvoice.payment_status
+                  )}`}
+                >
+                  {getStatusIcon(
+                    selectedInvoice.payment_status
+                  )}
+
+                  {selectedInvoice.payment_status}
+                </span>
+
+                <button
+                  type="button"
+                  className="modal-close"
+                  onClick={() =>
+                    setSelectedInvoice(null)
+                  }
+                >
+                  <X size={18} />
+                </button>
+
               </div>
             </div>
 
-            {selectedInvoice.notes && (
-              <div style={{ background: "rgba(15, 23, 42, 0.4)", padding: "12px 16px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.04)", fontSize: "13px", color: "#cbd5e1", marginBottom: "24px" }}>
-                <strong>Remarks:</strong> {selectedInvoice.notes}
+            {modalLoading ? (
+              <div className="modal-loading">
+                <div className="invoice-loading-spinner" />
+                <span>Loading invoice details...</span>
               </div>
+            ) : (
+              <>
+                {/* CUSTOMER INFORMATION */}
+                <div className="invoice-detail-grid">
+
+                  <div className="invoice-detail-item">
+                    <span>Customer</span>
+                    <strong>
+                      {selectedInvoice.customer_name ||
+                        "Walk-in customer"}
+                    </strong>
+                  </div>
+
+                  <div className="invoice-detail-item">
+                    <span>Customer Email</span>
+                    <strong>
+                      {selectedInvoice.customer_email ||
+                        "No email"}
+                    </strong>
+                  </div>
+
+                  <div className="invoice-detail-item">
+                    <span>Created By</span>
+                    <strong>
+                      {selectedInvoice.user_name ||
+                        "System"}
+                    </strong>
+                  </div>
+
+                  <div className="invoice-detail-item">
+                    <span>Billing Date</span>
+                    <strong>
+                      {new Date(
+                        selectedInvoice.invoice_date
+                      ).toLocaleDateString()}
+                    </strong>
+                  </div>
+
+                  <div className="invoice-detail-item">
+                    <span>Payment Due</span>
+                    <strong>
+                      {new Date(
+                        selectedInvoice.due_date
+                      ).toLocaleDateString()}
+                    </strong>
+                  </div>
+
+                </div>
+
+                {/* LINE ITEMS */}
+                <div className="invoice-items-section">
+
+                  <div className="invoice-modal-section-title">
+                    <span className="invoice-section-label">
+                      ORDER BREAKDOWN
+                    </span>
+
+                    <h3>Line Items</h3>
+                  </div>
+
+                  <div className="invoice-items-wrapper">
+                    <table className="invoice-items-table">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Quantity</th>
+                          <th>Unit Price</th>
+                          <th>Subtotal</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {selectedInvoice.items?.map(
+                          (item, index) => (
+                            <tr key={index}>
+                              <td>
+                                <strong>
+                                  {item.product_name}
+                                </strong>
+                              </td>
+
+                              <td>
+                                {item.quantity}
+                              </td>
+
+                              <td>
+                                ₹
+                                {Number(
+                                  item.unit_price || 0
+                                ).toLocaleString("en-IN")}
+                              </td>
+
+                              <td>
+                                <strong>
+                                  ₹
+                                  {Number(
+                                    item.subtotal || 0
+                                  ).toLocaleString(
+                                    "en-IN"
+                                  )}
+                                </strong>
+                              </td>
+                            </tr>
+                          )
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                </div>
+
+                {/* TOTALS */}
+                <div className="invoice-total-box">
+
+                  <div>
+                    <span>Subtotal</span>
+                    <strong>
+                      ₹
+                      {Number(
+                        selectedInvoice.subtotal || 0
+                      ).toLocaleString("en-IN")}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>GST Tax</span>
+                    <strong>
+                      ₹
+                      {Number(
+                        selectedInvoice.tax || 0
+                      ).toLocaleString("en-IN")}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Discount</span>
+                    <strong>
+                      -₹
+                      {Number(
+                        selectedInvoice.discount || 0
+                      ).toLocaleString("en-IN")}
+                    </strong>
+                  </div>
+
+                  <div className="grand-total">
+                    <span>Grand Total</span>
+                    <strong>
+                      ₹
+                      {Number(
+                        selectedInvoice.total_amount || 0
+                      ).toLocaleString("en-IN")}
+                    </strong>
+                  </div>
+
+                </div>
+
+                {/* NOTES */}
+                {selectedInvoice.notes && (
+                  <div className="invoice-notes">
+                    <span>Remarks</span>
+                    <p>{selectedInvoice.notes}</p>
+                  </div>
+                )}
+
+                {/* ACTIONS */}
+                <div className="invoice-modal-actions">
+
+                  <button
+                    type="button"
+                    className="modal-secondary-button"
+                    onClick={() =>
+                      setSelectedInvoice(null)
+                    }
+                  >
+                    Close Details
+                  </button>
+
+                  <button
+                    type="button"
+                    className="modal-delete-button"
+                    onClick={() =>
+                      handleDeleteInvoice(
+                        selectedInvoice.invoice_id
+                      )
+                    }
+                  >
+                    <Trash2 size={15} />
+                    Delete Invoice
+                  </button>
+
+                </div>
+              </>
             )}
 
-            <div style={{ display: "flex", gap: "12px" }}>
-              <button 
-                type="button" 
-                onClick={() => setSelectedInvoice(null)}
-                style={{ flex: 1, padding: "12px", background: "#334155", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "14px" }}
-              >
-                Close Details
-              </button>
-              <button 
-                type="button" 
-                onClick={() => handleDeleteInvoice(selectedInvoice.invoice_id)}
-                style={{ padding: "12px 20px", background: "#ef4444", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "14px" }}
-              >
-                Delete Invoice
-              </button>
-            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api";
-import "./Milestone3.css";
+import "./BusinessOverview.css";
 
 import { Line, Bar } from "react-chartjs-2";
 import {
@@ -33,12 +33,15 @@ function BusinessOverview() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const [dashboardResponse, revenueResponse, topSellingResponse] =
-          await Promise.all([
-            api.get("/api/dashboard"),
-            api.get("/api/dashboard/monthly-revenue"),
-            api.get("/api/dashboard/top-selling"),
-          ]);
+        const [
+          dashboardResponse,
+          revenueResponse,
+          topSellingResponse,
+        ] = await Promise.all([
+          api.get("/api/dashboard"),
+          api.get("/api/dashboard/monthly-revenue"),
+          api.get("/api/dashboard/top-selling"),
+        ]);
 
         setDashboard(dashboardResponse.data.dashboard);
 
@@ -49,8 +52,6 @@ function BusinessOverview() {
         setTopProducts(
           topSellingResponse.data.topSellingProducts || []
         );
-
-        
       } catch (error) {
         console.error("Dashboard Error:", error);
       } finally {
@@ -62,122 +63,519 @@ function BusinessOverview() {
   }, []);
 
   if (loading) {
-    return <div className="page">Loading dashboard...</div>;
+    return (
+      <div className="page">
+        Loading dashboard...
+      </div>
+    );
   }
 
+  /* =========================================================
+     THEME DETECTION
+  ========================================================= */
+
+  const isLightMode =
+    document.querySelector(".app")?.classList.contains("light");
+
+  const chartTextColor = isLightMode
+    ? "#475569"
+    : "#94a3b8";
+
+  const chartTitleColor = isLightMode
+    ? "#0f172a"
+    : "#f8fafc";
+
+  const chartGridColor = isLightMode
+    ? "rgba(15, 23, 42, 0.10)"
+    : "rgba(148, 163, 184, 0.16)";
+
+  /* =========================================================
+     REVENUE CHART DATA
+  ========================================================= */
+
   const revenueChartData = {
-    labels: monthlyRevenue.map((item) => item.month_name),
+    labels: monthlyRevenue.map(
+      (item) =>
+        item.month_name ||
+        item.month ||
+        ""
+    ),
+
     datasets: [
       {
         label: "Monthly Revenue",
-        data: monthlyRevenue.map((item) => item.total_revenue),
+
+        data: monthlyRevenue.map(
+          (item) =>
+            Number(item.total_revenue || 0)
+        ),
+
         borderColor: "#38bdf8",
-        backgroundColor: "rgba(56,189,248,0.2)",
-        tension: 0.4,
+
+        backgroundColor:
+          "rgba(56, 189, 248, 0.15)",
+
+        borderWidth: 3,
+
+        pointRadius: 4,
+
+        pointHoverRadius: 6,
+
+        pointBackgroundColor: "#38bdf8",
+
+        pointBorderColor: isLightMode
+          ? "#ffffff"
+          : "#0d1422",
+
+        pointBorderWidth: 2,
+
+        tension: 0.35,
+
         fill: true,
       },
     ],
   };
 
+  /* =========================================================
+     TOP PRODUCTS CHART DATA
+  ========================================================= */
+
   const topProductsChartData = {
-    labels: topProducts.map((item) => item.product_name),
+    labels: topProducts.map(
+      (item) =>
+        item.product_name ||
+        "Unknown Product"
+    ),
+
     datasets: [
       {
         label: "Quantity Sold",
-        data: topProducts.map((item) => item.total_quantity_sold),
+
+        data: topProducts.map(
+          (item) =>
+            Number(
+              item.total_quantity_sold || 0
+            )
+        ),
+
         backgroundColor: "#22c55e",
+
+        borderColor: "#16a34a",
+
+        borderWidth: 1,
+
+        borderRadius: 6,
+
+        maxBarThickness: 48,
       },
     ],
   };
 
+  /* =========================================================
+     CHART OPTIONS
+  ========================================================= */
+
   const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: "top",
-      labels: {
-        color: "#ffffff",
+    responsive: true,
+
+    maintainAspectRatio: false,
+
+    animation: {
+      duration: 700,
+    },
+
+    plugins: {
+      legend: {
+        display: true,
+
+        position: "top",
+
+        labels: {
+          display: true,
+
+          color: chartTextColor,
+
+          font: {
+            family:
+              "Inter, ui-sans-serif, system-ui, sans-serif",
+
+            size: 13,
+
+            weight: "500",
+          },
+
+          padding: 18,
+
+          usePointStyle: true,
+
+          pointStyle: "circle",
+        },
+      },
+
+      tooltip: {
+        enabled: true,
+
+        backgroundColor: isLightMode
+          ? "#ffffff"
+          : "#0d1422",
+
+        titleColor: chartTitleColor,
+
+        bodyColor: chartTextColor,
+
+        borderColor: isLightMode
+          ? "#dbe4ef"
+          : "#1b2638",
+
+        borderWidth: 1,
+
+        padding: 12,
+
+        titleFont: {
+          family:
+            "Inter, ui-sans-serif, system-ui, sans-serif",
+
+          size: 13,
+
+          weight: "600",
+        },
+
+        bodyFont: {
+          family:
+            "Inter, ui-sans-serif, system-ui, sans-serif",
+
+          size: 12,
+        },
       },
     },
-  },
-  scales: {
-    x: {
-      ticks: {
-        color: "#ffffff",
+
+    scales: {
+      x: {
+        display: true,
+
+        ticks: {
+          display: true,
+
+          color: chartTextColor,
+
+          font: {
+            family:
+              "Inter, ui-sans-serif, system-ui, sans-serif",
+
+            size: 11,
+
+            weight: "500",
+          },
+
+          padding: 8,
+
+          maxRotation: 45,
+
+          minRotation: 0,
+
+          autoSkip: false,
+        },
+
+        grid: {
+          display: true,
+
+          color: chartGridColor,
+
+          drawBorder: false,
+        },
+
+        border: {
+          display: false,
+        },
       },
-      grid: {
-        color: "#334155",
+
+      y: {
+        display: true,
+
+        beginAtZero: true,
+
+        ticks: {
+          display: true,
+
+          color: chartTextColor,
+
+          font: {
+            family:
+              "Inter, ui-sans-serif, system-ui, sans-serif",
+
+            size: 11,
+
+            weight: "500",
+          },
+
+          padding: 8,
+
+          callback: function (value) {
+            return (
+              "₹" +
+              Number(value).toLocaleString(
+                "en-IN"
+              )
+            );
+          },
+        },
+
+        grid: {
+          display: true,
+
+          color: chartGridColor,
+
+          drawBorder: false,
+        },
+
+        border: {
+          display: false,
+        },
       },
     },
-    y: {
-      ticks: {
-        color: "#ffffff",
-      },
-      grid: {
-        color: "#334155",
-      },
-    },
-  },
-};
+  };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1>📊 Business Overview</h1>
-        <p>Complete business performance dashboard.</p>
-      </div>
+    <div className="business-overview-page">
 
-      <div className="cards">
-        <div className="card">
-          <h3>Total Revenue</h3>
-          <h2>₹{dashboard?.totalRevenue ?? 0}</h2>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <section className="business-overview-header">
+
+        <div>
+
+          <span className="section-eyebrow">
+            BUSINESS INTELLIGENCE
+          </span>
+
+          <h1>
+            Business Overview
+          </h1>
+
+          <p>
+            Monitor revenue, invoices, customers
+            and product performance across your
+            business.
+          </p>
+
         </div>
 
-        <div className="card">
-          <h3>Total Invoices</h3>
-          <h2>{dashboard?.totalInvoices ?? 0}</h2>
+        <button
+          className="overview-refresh"
+          onClick={() =>
+            window.location.reload()
+          }
+        >
+          Refresh
+        </button>
+
+      </section>
+
+      {/* =====================================================
+          STAT CARDS
+      ===================================================== */}
+
+      <section className="business-overview-stats">
+
+        {/* Revenue */}
+
+        <div className="overview-stat-card">
+
+          <div className="stat-card-top">
+            <span>Revenue</span>
+          </div>
+
+          <p>
+            Total Revenue
+          </p>
+
+          <h2>
+            ₹
+            {Number(
+              dashboard?.totalRevenue ?? 0
+            ).toLocaleString("en-IN")}
+          </h2>
+
+          <small>
+            Current reporting period
+          </small>
+
         </div>
 
-        <div className="card">
-          <h3>Total Customers</h3>
-          <h2>{dashboard?.totalCustomers ?? 0}</h2>
+        {/* Invoices */}
+
+        <div className="overview-stat-card">
+
+          <div className="stat-card-top">
+            <span>Invoices</span>
+          </div>
+
+          <p>
+            Total Invoices
+          </p>
+
+          <h2>
+            {dashboard?.totalInvoices ?? 0}
+          </h2>
+
+          <small>
+            Recorded invoices
+          </small>
+
         </div>
 
-        <div className="card">
-          <h3>Low Stock Products</h3>
-          <h2>{dashboard?.lowStockProducts ?? 0}</h2>
+        {/* Customers */}
+
+        <div className="overview-stat-card">
+
+          <div className="stat-card-top">
+            <span>Customers</span>
+          </div>
+
+          <p>
+            Total Customers
+          </p>
+
+          <h2>
+            {dashboard?.totalCustomers ?? 0}
+          </h2>
+
+          <small>
+            Registered customers
+          </small>
+
         </div>
-      </div>
 
-      <div className="chart-box large-chart" style={{ height: "420px", marginTop: "30px" }}>
-        <h2>Revenue Analytics</h2>
+        {/* Inventory */}
 
-        {monthlyRevenue.length > 0 ? (
-          <Line
-            data={revenueChartData}
-            options={chartOptions}
-          />
-        ) : (
-          <p>No revenue data available..</p>
-        )}
-      </div>
+        <div className="overview-stat-card">
 
-      <div
-        className="chart-box"
-        style={{ height: "420px", marginTop: "30px" }}
-      >
-        <h2>Top Selling Products</h2>
+          <div className="stat-card-top">
+            <span>Inventory</span>
+          </div>
 
-        {topProducts.length > 0 ? (
-          <Bar
-            data={topProductsChartData}
-            options={chartOptions}
-          />
-        ) : (
-          <p>No top selling products available.</p>
-        )}
-      </div>
+          <p>
+            Low Stock Products
+          </p>
+
+          <h2>
+            {dashboard?.lowStockProducts ?? 0}
+          </h2>
+
+          <small>
+            Products requiring attention
+          </small>
+
+        </div>
+
+      </section>
+
+      {/* =====================================================
+          CHARTS
+      ===================================================== */}
+
+      <section className="overview-chart-grid">
+
+        {/* =================================================
+            MONTHLY REVENUE
+        ================================================= */}
+
+        <div className="overview-chart-card overview-chart-large">
+
+          <div className="chart-card-header">
+
+            <div>
+
+              <span className="section-eyebrow">
+                REVENUE PERFORMANCE
+              </span>
+
+              <h2>
+                Monthly Revenue
+              </h2>
+
+              <p>
+                Revenue movement across the
+                reporting period.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="overview-chart-area">
+
+            {monthlyRevenue.length > 0 ? (
+
+              <Line
+                data={revenueChartData}
+                options={chartOptions}
+              />
+
+            ) : (
+
+              <div className="overview-empty">
+                No revenue data available.
+              </div>
+
+            )}
+
+          </div>
+
+        </div>
+
+        {/* =================================================
+            TOP SELLING PRODUCTS
+        ================================================= */}
+
+        <div className="overview-chart-card">
+
+          <div className="chart-card-header">
+
+            <div>
+
+              <span className="section-eyebrow">
+                PRODUCT PERFORMANCE
+              </span>
+
+              <h2>
+                Top Selling Products
+              </h2>
+
+              <p>
+                Products ranked by quantity sold.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="overview-chart-area">
+
+            {topProducts.length > 0 ? (
+
+              <Bar
+                data={topProductsChartData}
+                options={chartOptions}
+              />
+
+            ) : (
+
+              <div className="overview-empty">
+                No top selling products
+                available.
+              </div>
+
+            )}
+
+          </div>
+
+        </div>
+
+      </section>
+
     </div>
   );
 }

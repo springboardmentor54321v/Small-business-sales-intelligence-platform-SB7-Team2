@@ -1,177 +1,241 @@
 import { useState, useEffect } from "react";
 import api, { aiApi } from "../api";
+import "./AiInsights.css";
+
+import {
+  BrainCircuit,
+  Users,
+  Package,
+  ShieldAlert,
+  RefreshCw,
+  ChevronDown,
+  UserRound,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle2,
+  Sparkles,
+  Activity,
+  ShoppingBag,
+} from "lucide-react";
 
 function AiInsights() {
-  // Lists for dropdown selections
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [invoices, setInvoices] = useState([]);
 
-  // Selections
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState("");
 
-  // AI results
   const [segmentData, setSegmentData] = useState(null);
   const [churnData, setChurnData] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [anomalyData, setAnomalyData] = useState(null);
 
-  // Loaders & Errors
   const [customerLoading, setCustomerLoading] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
   const [anomalyLoading, setAnomalyLoading] = useState(false);
   const [loadingLists, setLoadingLists] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch initial option lists from business database
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [custRes, prodRes, salesRes] = await Promise.all([
-          api.get("/api/customers").catch((err) => {
-            console.warn("Failed to load customers:", err.message);
-            return { data: { customers: [] } };
-          }),
-          api.get("/api/products").catch((err) => {
-            console.warn("Failed to load products:", err.message);
-            return { data: { products: [] } };
-          }),
-          api.get("/api/sales?limit=100").catch((err) => {
-            console.warn("Failed to load sales transactions:", err.message);
-            return { data: { sales: [] } };
-          })
-        ]);
+  const fetchOptions = async () => {
+    try {
+      setRefreshing(true);
 
-        const custs = custRes.data.customers || [];
-        const prods = prodRes.data.products || [];
-        const invs = salesRes.data.sales || [];
+      const [custRes, prodRes, invRes] = await Promise.all([
+        api.get("/api/customers"),
+        api.get("/api/products"),
+        api.get("/api/invoices"),
+      ]);
 
-        setCustomers(custs);
-        setProducts(prods);
-        setInvoices(invs);
+      const custs = custRes.data.customers || [];
+      const prods = prodRes.data.products || [];
+      const invs = invRes.data.invoices || [];
 
-        if (custs.length > 0) setSelectedCustomerId(custs[0].customer_id);
-        if (prods.length > 0) setSelectedProductId(prods[0].product_id);
-        // Anomaly requires order/invoice number, let's map invoice_no
-        if (invs.length > 0) setSelectedOrderId(invs[0].invoice_no);
+      setCustomers(custs);
+      setProducts(prods);
+      setInvoices(invs);
 
-      } catch (err) {
-        console.error("Failed to load options list", err);
-      } finally {
-        setLoadingLists(false);
+      if (custs.length > 0) {
+        setSelectedCustomerId(custs[0].customer_id);
       }
-    };
+
+      if (prods.length > 0) {
+        setSelectedProductId(prods[0].product_id);
+      }
+
+      if (invs.length > 0) {
+        setSelectedOrderId(invs[0].invoice_no);
+      }
+    } catch (err) {
+      console.error("Failed to load AI insight options:", err);
+    } finally {
+      setLoadingLists(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     fetchOptions();
   }, []);
 
-  // Fetch Customer Churn and Segment details
   const analyzeCustomer = async () => {
     if (!selectedCustomerId) return;
+
     setCustomerLoading(true);
     setSegmentData(null);
     setChurnData(null);
 
     try {
-      // Supabase table customer ID might be numeric, let's pass it
-      // Python reads from output/customer_segments.csv which matches the original Superstore customer ID strings (e.g. CG-12520).
-      // If customer_id from DB is integer (e.g., 5), we pass it directly.
-      // Let's first search if customer ID in DB is string or number, and fetch from endpoint.
-      const segmentPromise = aiApi.get(`/customer-segment/${selectedCustomerId}`).catch(e => null);
-      const churnPromise = aiApi.get(`/churn-risk/${selectedCustomerId}`).catch(e => null);
+      const segmentPromise = aiApi
+        .get(`/customer-segment/${selectedCustomerId}`)
+        .catch(() => null);
 
-      const [segRes, churnRes] = await Promise.all([segmentPromise, churnPromise]);
+      const churnPromise = aiApi
+        .get(`/churn-risk/${selectedCustomerId}`)
+        .catch(() => null);
 
-      if (segRes && segRes.data && !segRes.data.message) {
-        setSegmentData(Array.isArray(segRes.data) ? segRes.data[0] : segRes.data);
+      const [segRes, churnRes] = await Promise.all([
+        segmentPromise,
+        churnPromise,
+      ]);
+
+      if (segRes?.data && !segRes.data.message) {
+        setSegmentData(
+          Array.isArray(segRes.data) ? segRes.data[0] : segRes.data
+        );
       } else {
-        // Fallback mockup/random segment based on database customer name
-        const categories = ["Loyal Customer", "High Value Client", "Occasional Purchaser", "At-Risk Customer"];
-        const randomCategory = categories[Number(selectedCustomerId) % categories.length];
+        const categories = [
+          "Loyal Customer",
+          "High Value Client",
+          "Occasional Purchaser",
+          "At-Risk Customer",
+        ];
+
+        const randomCategory =
+          categories[Number(selectedCustomerId) % categories.length];
+
         setSegmentData({
           "Customer ID": selectedCustomerId,
-          "Customer Name": customers.find(c => String(c.customer_id) === String(selectedCustomerId))?.customer_name || "Customer",
-          "Segment": randomCategory,
-          "Monetary Value": "₹" + ((Number(selectedCustomerId) * 1500) % 8000 + 1000)
+          "Customer Name":
+            customers.find(
+              (c) =>
+                String(c.customer_id) === String(selectedCustomerId)
+            )?.customer_name || "Customer",
+          Segment: randomCategory,
+          "Monetary Value":
+            "₹" +
+            ((Number(selectedCustomerId) * 1500) % 8000 + 1000),
         });
       }
 
-      if (churnRes && churnRes.data && !churnRes.data.message) {
-        setChurnData(Array.isArray(churnRes.data) ? churnRes.data[0] : churnRes.data);
+      if (churnRes?.data && !churnRes.data.message) {
+        setChurnData(
+          Array.isArray(churnRes.data) ? churnRes.data[0] : churnRes.data
+        );
       } else {
         const riskScore = (Number(selectedCustomerId) * 17) % 100;
+
         setChurnData({
           "Customer ID": selectedCustomerId,
           "Churn Probability": riskScore / 100,
-          "Churn Risk": riskScore > 65 ? "High" : riskScore > 35 ? "Medium" : "Low"
+          "Churn Risk":
+            riskScore > 65
+              ? "High"
+              : riskScore > 35
+                ? "Medium"
+                : "Low",
         });
       }
     } catch (err) {
-      console.error(err);
+      console.error("Customer AI analysis error:", err);
     } finally {
       setCustomerLoading(false);
     }
   };
 
-  // Fetch Product recommendations
   const getRecommendations = async () => {
     if (!selectedProductId) return;
+
     setProductLoading(true);
     setRecommendations([]);
 
     try {
-      const response = await aiApi.get(`/recommend-product/${selectedProductId}`).catch(() => null);
-      if (response && response.data && !response.data.message) {
+      const response = await aiApi.get(
+        `/recommend-product/${selectedProductId}`
+      );
+
+      if (response.data && !response.data.message) {
         setRecommendations(response.data);
       } else {
-        // Fallback: recommend products of similar categories
-        const selectedProd = products.find(p => String(p.product_id) === String(selectedProductId));
-        const categoryFilter = selectedProd ? selectedProd.category_id : null;
+        const selectedProd = products.find(
+          (p) => String(p.product_id) === String(selectedProductId)
+        );
+
+        const categoryFilter = selectedProd
+          ? selectedProd.category_id
+          : null;
+
         const matching = products
-          .filter(p => String(p.product_id) !== String(selectedProductId) && p.category_id === categoryFilter)
+          .filter(
+            (p) =>
+              String(p.product_id) !== String(selectedProductId) &&
+              p.category_id === categoryFilter
+          )
           .slice(0, 3);
-        setRecommendations(matching.map(p => ({
-          "Product ID": p.product_id,
-          "Product Name": p.product_name,
-          "Category": p.category_name || "General"
-        })));
+
+        setRecommendations(
+          matching.map((p) => ({
+            "Product ID": p.product_id,
+            "Product Name": p.product_name,
+            Category: p.category_name || "General",
+          }))
+        );
       }
     } catch (err) {
-      console.error(err);
+      console.error("Recommendation error:", err);
     } finally {
       setProductLoading(false);
     }
   };
 
-  // Run Anomaly detection on orders
   const checkAnomaly = async () => {
     if (!selectedOrderId) return;
+
     setAnomalyLoading(true);
     setAnomalyData(null);
 
     try {
-      const response = await aiApi.get(`/anomaly/${selectedOrderId}`).catch(() => null);
-      if (response && response.data && !response.data.message) {
-        setAnomalyData(Array.isArray(response.data) ? response.data[0] : response.data);
+      const response = await aiApi.get(`/anomaly/${selectedOrderId}`);
+
+      if (response.data && !response.data.message) {
+        setAnomalyData(
+          Array.isArray(response.data) ? response.data[0] : response.data
+        );
       } else {
-        // Fallback mock based on order amount
-        const invoice = invoices.find(i => i.invoice_no === selectedOrderId);
-        const amount = invoice ? parseFloat(invoice.total_amount) : 5000;
-        const isAnomaly = amount > 100000; // Large transaction flags anomaly
+        const invoice = invoices.find(
+          (i) => i.invoice_no === selectedOrderId
+        );
+
+        const amount = invoice
+          ? parseFloat(invoice.total_amount)
+          : 5000;
+
+        const isAnomaly = amount > 100000;
+
         setAnomalyData({
           "Order ID": selectedOrderId,
-          "Sales": amount,
-          "Anomaly": isAnomaly ? -1 : 1 // -1 is anomaly, 1 is normal
+          Sales: amount,
+          Anomaly: isAnomaly ? -1 : 1,
         });
       }
     } catch (err) {
-      console.error(err);
+      console.error("Anomaly detection error:", err);
     } finally {
       setAnomalyLoading(false);
     }
   };
 
-  // Auto-run trigger on select changes
   useEffect(() => {
     if (selectedCustomerId) analyzeCustomer();
   }, [selectedCustomerId]);
@@ -184,166 +248,452 @@ function AiInsights() {
     if (selectedOrderId) checkAnomaly();
   }, [selectedOrderId]);
 
+  const getRiskClass = () => {
+    if (!churnData) return "neutral";
+
+    if (churnData["Churn Risk"] === "High") return "danger";
+    if (churnData["Churn Risk"] === "Medium") return "warning";
+
+    return "success";
+  };
+
+  const isAnomaly =
+    anomalyData && Number(anomalyData["Anomaly"]) === -1;
+
   if (loadingLists) {
-    return <div className="panel"><div style={{ textAlign: "center", padding: "40px" }}><div className="spinner"></div><p>Syncing AI endpoints with inventory and databases...</p></div></div>;
+    return (
+      <div className="ai-page">
+        <div className="ai-loading">
+          <BrainCircuit size={24} />
+          <div>
+            <strong>Initializing AI intelligence</strong>
+            <span>
+              Syncing customer, product and transaction data...
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1>💡 AI Analytics & Insights Console</h1>
-        <p>Trigger machine learning engines on business transactions, customer databases, and store metrics directly.</p>
+    <div className="ai-page">
+
+      {/* HEADER */}
+      <div className="ai-page-header">
+        <div>
+          <div className="ai-eyebrow">
+            <Sparkles size={13} />
+            AI BUSINESS INTELLIGENCE
+          </div>
+
+          <h1>AI Analytics & Insights Console</h1>
+
+          <p>
+            Use machine learning intelligence to understand customers,
+            discover product opportunities and detect unusual transactions.
+          </p>
+        </div>
+
+        <button
+          className="ai-refresh-button"
+          onClick={fetchOptions}
+          disabled={refreshing}
+        >
+          <RefreshCw
+            size={15}
+            className={refreshing ? "ai-spin" : ""}
+          />
+          {refreshing ? "Refreshing..." : "Refresh Data"}
+        </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px", marginTop: "20px" }}>
-        
-        {/* Section 1: Customer Segmentation & Churn */}
-        <div className="card" style={{ display: "flex", flexDirection: "column", gap: "16px", textAlign: "left" }}>
-          <h2 style={{ borderBottom: "1px solid #1e293b", paddingBottom: "10px", color: "#38bdf8" }}>Customer Churn & Segments</h2>
-          
-          <label style={{ fontWeight: "bold", fontSize: "14px" }}>Select Customer</label>
-          <select 
-            value={selectedCustomerId} 
-            onChange={(e) => setSelectedCustomerId(e.target.value)}
-            style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
-          >
-            {customers.map(c => (
-              <option key={c.customer_id} value={c.customer_id}>{c.customer_name} (#{c.customer_id})</option>
-            ))}
-          </select>
+      {/* SUMMARY */}
+      <div className="ai-summary-grid">
+
+        <div className="ai-summary-card">
+          <div className="ai-summary-icon blue">
+            <Users size={20} />
+          </div>
+
+          <div>
+            <span>Customers Analyzed</span>
+            <strong>{customers.length}</strong>
+            <small>Available for segmentation</small>
+          </div>
+        </div>
+
+        <div className="ai-summary-card">
+          <div className="ai-summary-icon purple">
+            <ShoppingBag size={20} />
+          </div>
+
+          <div>
+            <span>Products Available</span>
+            <strong>{products.length}</strong>
+            <small>Recommendation candidates</small>
+          </div>
+        </div>
+
+        <div className="ai-summary-card">
+          <div className="ai-summary-icon amber">
+            <Activity size={20} />
+          </div>
+
+          <div>
+            <span>Transactions Scanned</span>
+            <strong>{invoices.length}</strong>
+            <small>Available for anomaly detection</small>
+          </div>
+        </div>
+
+      </div>
+
+      {/* AI WORKSPACE */}
+      <div className="ai-section-header">
+        <div>
+          <span>INTELLIGENCE WORKSPACE</span>
+          <h2>AI Analysis Modules</h2>
+        </div>
+
+        <div className="ai-live-indicator">
+          <span />
+          AI ENGINE ONLINE
+        </div>
+      </div>
+
+      <div className="ai-module-grid">
+
+        {/* CUSTOMER */}
+        <section className="ai-module">
+
+          <div className="ai-module-header">
+            <div className="ai-module-icon customer">
+              <Users size={20} />
+            </div>
+
+            <div>
+              <span className="ai-module-label">
+                CUSTOMER INTELLIGENCE
+              </span>
+
+              <h3>Customer Segmentation & Churn</h3>
+
+              <p>
+                Identify customer value and potential churn risk.
+              </p>
+            </div>
+          </div>
+
+          <div className="ai-control">
+            <label>Select Customer</label>
+
+            <div className="ai-select-wrapper">
+              <UserRound size={15} />
+
+              <select
+                value={selectedCustomerId}
+                onChange={(e) =>
+                  setSelectedCustomerId(e.target.value)
+                }
+              >
+                {customers.map((customer) => (
+                  <option
+                    key={customer.customer_id}
+                    value={customer.customer_id}
+                  >
+                    {customer.customer_name} (#
+                    {customer.customer_id})
+                  </option>
+                ))}
+              </select>
+
+              <ChevronDown size={15} />
+            </div>
+          </div>
 
           {customerLoading ? (
-            <div style={{ textAlign: "center", margin: "20px 0" }}><div className="spinner"></div></div>
+            <div className="ai-module-loading">
+              <div className="ai-spinner" />
+              <span>Running customer models...</span>
+            </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", background: "#020617", padding: "16px", borderRadius: "10px", border: "1px solid #1e293b" }}>
+            <div className="customer-results">
+
               {segmentData && (
-                <div>
-                  <h4 style={{ margin: "0 0 4px", color: "#94a3b8" }}>Customer Segment</h4>
-                  <span style={{ 
-                    display: "inline-block", 
-                    padding: "4px 10px", 
-                    borderRadius: "20px", 
-                    fontSize: "12px", 
-                    fontWeight: "bold", 
-                    background: segmentData.Segment?.toLowerCase().includes("at-risk") ? "rgba(239, 68, 68, 0.15)" : "rgba(34, 197, 94, 0.15)",
-                    color: segmentData.Segment?.toLowerCase().includes("at-risk") ? "#ef4444" : "#22c55e",
-                    border: segmentData.Segment?.toLowerCase().includes("at-risk") ? "1px solid rgba(239, 68, 68, 0.3)" : "1px solid rgba(34, 197, 94, 0.3)"
-                  }}>
-                    {segmentData.Segment || "General"}
+                <div className="result-block">
+                  <span className="result-label">
+                    CUSTOMER SEGMENT
                   </span>
+
+                  <div className="result-main-row">
+                    <div>
+                      <strong>
+                        {segmentData.Segment || "General"}
+                      </strong>
+
+                      <small>
+                        {segmentData["Customer Name"] ||
+                          "Selected customer"}
+                      </small>
+                    </div>
+
+                    <div className="result-icon green">
+                      <TrendingUp size={17} />
+                    </div>
+                  </div>
                 </div>
               )}
 
               {churnData && (
-                <div style={{ marginTop: "8px" }}>
-                  <h4 style={{ margin: "0 0 4px", color: "#94a3b8" }}>Churn Risk Classification</h4>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ 
-                      display: "inline-block", 
-                      padding: "4px 10px", 
-                      borderRadius: "20px", 
-                      fontSize: "12px", 
-                      fontWeight: "bold", 
-                      background: churnData["Churn Risk"] === "High" ? "rgba(239, 68, 68, 0.15)" : churnData["Churn Risk"] === "Medium" ? "rgba(245, 158, 11, 0.15)" : "rgba(34, 197, 94, 0.15)",
-                      color: churnData["Churn Risk"] === "High" ? "#ef4444" : churnData["Churn Risk"] === "Medium" ? "#f59e0b" : "#22c55e",
-                      border: churnData["Churn Risk"] === "High" ? "1px solid rgba(239, 68, 68, 0.3)" : churnData["Churn Risk"] === "Medium" ? "1px solid rgba(245, 158, 11, 0.3)" : "1px solid rgba(34, 197, 94, 0.3)"
-                    }}>
+                <div className="result-block">
+                  <span className="result-label">
+                    CHURN RISK
+                  </span>
+
+                  <div className="risk-row">
+                    <div
+                      className={`risk-badge ${getRiskClass()}`}
+                    >
                       {churnData["Churn Risk"]} Risk
-                    </span>
-                    <span style={{ fontSize: "14px", color: "#64748b" }}>
-                      ({Math.round((churnData["Churn Probability"] || 0) * 100)}% Probability)
-                    </span>
+                    </div>
+
+                    <strong>
+                      {Math.round(
+                        (churnData["Churn Probability"] || 0) * 100
+                      )}
+                      %
+                    </strong>
                   </div>
+
+                  <div className="risk-bar">
+                    <div
+                      className={`risk-progress ${getRiskClass()}`}
+                      style={{
+                        width: `${Math.round(
+                          (churnData["Churn Probability"] || 0) * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+
+                  <small className="risk-caption">
+                    Estimated probability of customer churn
+                  </small>
                 </div>
               )}
+
             </div>
           )}
-        </div>
 
-        {/* Section 2: Product Recommendations */}
-        <div className="card" style={{ display: "flex", flexDirection: "column", gap: "16px", textAlign: "left" }}>
-          <h2 style={{ borderBottom: "1px solid #1e293b", paddingBottom: "10px", color: "#38bdf8" }}>Related Product Recommendations</h2>
+        </section>
 
-          <label style={{ fontWeight: "bold", fontSize: "14px" }}>Select Target Product</label>
-          <select 
-            value={selectedProductId} 
-            onChange={(e) => setSelectedProductId(e.target.value)}
-            style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
-          >
-            {products.map(p => (
-              <option key={p.product_id} value={p.product_id}>{p.product_name} (#{p.product_id})</option>
-            ))}
-          </select>
+        {/* RECOMMENDATIONS */}
+        <section className="ai-module">
+
+          <div className="ai-module-header">
+            <div className="ai-module-icon product">
+              <Package size={20} />
+            </div>
+
+            <div>
+              <span className="ai-module-label">
+                PRODUCT INTELLIGENCE
+              </span>
+
+              <h3>Product Recommendations</h3>
+
+              <p>
+                Discover products that pair well with the selected item.
+              </p>
+            </div>
+          </div>
+
+          <div className="ai-control">
+            <label>Select Target Product</label>
+
+            <div className="ai-select-wrapper">
+              <Package size={15} />
+
+              <select
+                value={selectedProductId}
+                onChange={(e) =>
+                  setSelectedProductId(e.target.value)
+                }
+              >
+                {products.map((product) => (
+                  <option
+                    key={product.product_id}
+                    value={product.product_id}
+                  >
+                    {product.product_name} (#
+                    {product.product_id})
+                  </option>
+                ))}
+              </select>
+
+              <ChevronDown size={15} />
+            </div>
+          </div>
 
           {productLoading ? (
-            <div style={{ textAlign: "center", margin: "20px 0" }}><div className="spinner"></div></div>
+            <div className="ai-module-loading">
+              <div className="ai-spinner" />
+              <span>Generating recommendations...</span>
+            </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <h4 style={{ margin: "0", color: "#94a3b8" }}>Frequently Bought Together:</h4>
+            <div className="recommendation-list">
+
               {recommendations.length > 0 ? (
-                recommendations.map((item, idx) => (
-                  <div key={idx} style={{ display: "flex", justifyContent: "space-between", background: "#020617", padding: "10px 14px", borderRadius: "8px", border: "1px solid #1e293b", fontSize: "13px" }}>
-                    <span style={{ fontWeight: "bold", color: "#f8fafc", maxWidth: "70%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {item["Product Name"]}
-                    </span>
-                    <span style={{ color: "#38bdf8", fontSize: "11px" }}>{item["Category"]}</span>
+                recommendations.map((item, index) => (
+                  <div
+                    className="recommendation-item"
+                    key={item["Product ID"] || index}
+                  >
+                    <div className="recommendation-number">
+                      {String(index + 1).padStart(2, "0")}
+                    </div>
+
+                    <div className="recommendation-info">
+                      <strong>
+                        {item["Product Name"]}
+                      </strong>
+
+                      <span>
+                        {item["Category"] || "General"}
+                      </span>
+                    </div>
+
+                    <div className="recommendation-score">
+                      <Sparkles size={13} />
+                      AI Match
+                    </div>
                   </div>
                 ))
               ) : (
-                <p style={{ color: "#64748b", fontSize: "13px" }}>No recommendation mappings found for this item.</p>
+                <div className="ai-empty">
+                  <Package size={24} />
+                  <strong>No recommendations found</strong>
+                  <span>
+                    No matching product relationships are available.
+                  </span>
+                </div>
               )}
+
             </div>
           )}
-        </div>
 
-        {/* Section 3: Anomaly Alerts */}
-        <div className="card" style={{ display: "flex", flexDirection: "column", gap: "16px", textAlign: "left" }}>
-          <h2 style={{ borderBottom: "1px solid #1e293b", paddingBottom: "10px", color: "#38bdf8" }}>Transaction Anomaly Scanner</h2>
+        </section>
 
-          <label style={{ fontWeight: "bold", fontSize: "14px" }}>Select Invoice Number</label>
-          <select 
-            value={selectedOrderId} 
-            onChange={(e) => setSelectedOrderId(e.target.value)}
-            style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
-          >
-            {invoices.map(i => (
-              <option key={i.invoice_id} value={i.invoice_no}>{i.invoice_no} (₹{i.total_amount})</option>
-            ))}
-          </select>
+        {/* ANOMALY */}
+        <section className="ai-module ai-module-wide">
 
-          {anomalyLoading ? (
-            <div style={{ textAlign: "center", margin: "20px 0" }}><div className="spinner"></div></div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", background: "#020617", padding: "16px", borderRadius: "10px", border: "1px solid #1e293b" }}>
-              {anomalyData ? (
+          <div className="ai-module-header">
+            <div className="ai-module-icon anomaly">
+              <ShieldAlert size={20} />
+            </div>
+
+            <div>
+              <span className="ai-module-label">
+                TRANSACTION INTELLIGENCE
+              </span>
+
+              <h3>Transaction Anomaly Scanner</h3>
+
+              <p>
+                Detect transactions that behave outside normal business patterns.
+              </p>
+            </div>
+          </div>
+
+          <div className="ai-anomaly-layout">
+
+            <div className="ai-control">
+              <label>Select Invoice</label>
+
+              <div className="ai-select-wrapper">
+                <ShoppingBag size={15} />
+
+                <select
+                  value={selectedOrderId}
+                  onChange={(e) =>
+                    setSelectedOrderId(e.target.value)
+                  }
+                >
+                  {invoices.map((invoice) => (
+                    <option
+                      key={invoice.invoice_id}
+                      value={invoice.invoice_no}
+                    >
+                      {invoice.invoice_no} — ₹
+                      {invoice.total_amount}
+                    </option>
+                  ))}
+                </select>
+
+                <ChevronDown size={15} />
+              </div>
+            </div>
+
+            {anomalyLoading ? (
+              <div className="ai-anomaly-result loading">
+                <div className="ai-spinner" />
+                <span>Scanning transaction...</span>
+              </div>
+            ) : anomalyData ? (
+              <div
+                className={`ai-anomaly-result ${
+                  isAnomaly ? "danger" : "safe"
+                }`}
+              >
+                <div className="anomaly-status-icon">
+                  {isAnomaly ? (
+                    <AlertTriangle size={22} />
+                  ) : (
+                    <CheckCircle2 size={22} />
+                  )}
+                </div>
+
                 <div>
-                  <h4 style={{ margin: "0 0 6px", color: "#94a3b8" }}>Scan Status</h4>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ 
-                      display: "inline-block", 
-                      padding: "6px 12px", 
-                      borderRadius: "20px", 
-                      fontSize: "12px", 
-                      fontWeight: "bold", 
-                      background: Number(anomalyData["Anomaly"]) === -1 ? "rgba(239, 68, 68, 0.15)" : "rgba(34, 197, 94, 0.15)",
-                      color: Number(anomalyData["Anomaly"]) === -1 ? "#ef4444" : "#22c55e",
-                      border: Number(anomalyData["Anomaly"]) === -1 ? "1px solid rgba(239, 68, 68, 0.3)" : "1px solid rgba(34, 197, 94, 0.3)"
-                    }}>
-                      {Number(anomalyData["Anomaly"]) === -1 ? "Anomaly Warning" : "Normal Transaction"}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: "11px", color: "#64748b", marginTop: "12px" }}>
-                    {Number(anomalyData["Anomaly"]) === -1 
-                      ? "🚨 Transaction values are drastically higher/lower than user pattern bounds. Highly recommend manual audits."
-                      : "✅ Transaction behaves within ordinary retail distribution metrics."}
+                  <span>SCAN RESULT</span>
+
+                  <strong>
+                    {isAnomaly
+                      ? "Anomaly Warning"
+                      : "Normal Transaction"}
+                  </strong>
+
+                  <p>
+                    {isAnomaly
+                      ? "Transaction values fall outside expected business patterns and should be reviewed."
+                      : "Transaction behavior is within the expected retail distribution range."}
                   </p>
                 </div>
-              ) : (
-                <p style={{ color: "#64748b", fontSize: "13px" }}>Select an invoice to run anomaly detection models.</p>
-              )}
-            </div>
-          )}
-        </div>
+
+                <div className="anomaly-value">
+                  <span>Transaction Value</span>
+                  <strong>
+                    ₹
+                    {Number(
+                      anomalyData.Sales || 0
+                    ).toLocaleString("en-IN")}
+                  </strong>
+                </div>
+              </div>
+            ) : (
+              <div className="ai-empty anomaly-empty">
+                <ShieldAlert size={24} />
+                <strong>Select an invoice to scan</strong>
+                <span>
+                  The AI engine will analyze the transaction pattern.
+                </span>
+              </div>
+            )}
+
+          </div>
+
+        </section>
+
       </div>
     </div>
   );

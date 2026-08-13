@@ -1,5 +1,21 @@
 import { useState, useEffect } from "react";
+import {
+  CreditCard,
+  WalletCards,
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  CalendarDays,
+  UserRound,
+  Receipt,
+  X,
+  ArrowRight,
+  History,
+  CircleDollarSign,
+  LoaderCircle,
+} from "lucide-react";
 import api from "../api";
+import "./Payments.css";
 
 function Payments() {
   const [invoices, setInvoices] = useState([]);
@@ -7,7 +23,6 @@ function Payments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Form state to log payment
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [amountPaid, setAmountPaid] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
@@ -17,15 +32,22 @@ function Payments() {
 
   const fetchData = async () => {
     try {
+      setError(null);
+
       const [invoiceRes, paymentRes] = await Promise.all([
         api.get("/api/invoices"),
-        api.get("/api/payments")
+        api.get("/api/payments"),
       ]);
+
       setInvoices(invoiceRes.data.invoices || []);
       setPayments(paymentRes.data.payments || []);
     } catch (err) {
       console.error(err);
-      setError(err.formattedMessage || "Failed to load payment databases.");
+
+      setError(
+        err.formattedMessage ||
+          "Failed to load payment databases."
+      );
     } finally {
       setLoading(false);
     }
@@ -37,7 +59,9 @@ function Payments() {
 
   const handleRecordPayment = async (e) => {
     e.preventDefault();
+
     if (!selectedInvoice || !amountPaid) return;
+
     setSubmitting(true);
 
     try {
@@ -46,249 +70,733 @@ function Payments() {
         amount_paid: parseFloat(amountPaid),
         payment_method: paymentMethod,
         transaction_reference: reference,
-        remarks: remarks
+        remarks: remarks,
       });
-      alert("Payment recorded successfully!");
+
+      alert("Payment recorded successfully.");
+
       setAmountPaid("");
       setReference("");
       setRemarks("");
       setSelectedInvoice(null);
+
       await fetchData();
     } catch (err) {
-      alert(err.formattedMessage || "Failed to record payment.");
+      alert(
+        err.formattedMessage ||
+          "Failed to record payment."
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   if (loading) {
-    return <div className="panel"><div className="spinner"></div><p>Synchronizing billing & ledger transactions...</p></div>;
+    return (
+      <div className="payments-loading">
+        <LoaderCircle className="payments-spinner" size={28} />
+        <span>
+          Synchronizing billing and ledger transactions...
+        </span>
+      </div>
+    );
   }
 
-  // Calculate Metrics
   const today = new Date();
-  today.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
 
-  const paidInvoices = invoices.filter(i => i.payment_status === "Paid");
-  const unpaidInvoices = invoices.filter(i => i.payment_status !== "Paid");
+  const paidInvoices = invoices.filter(
+    (invoice) =>
+      invoice.payment_status === "Paid"
+  );
 
-  const pendingInvoices = unpaidInvoices.filter(i => {
-    const dueDate = new Date(i.due_date);
-    return dueDate >= today;
-  });
+  const unpaidInvoices = invoices.filter(
+    (invoice) =>
+      invoice.payment_status !== "Paid"
+  );
 
-  const overdueInvoices = unpaidInvoices.filter(i => {
-    const dueDate = new Date(i.due_date);
-    return dueDate < today;
-  });
+  const pendingInvoices = unpaidInvoices.filter(
+    (invoice) => {
+      const dueDate = new Date(invoice.due_date);
+      return dueDate >= today;
+    }
+  );
 
-  // Calculate sums
-  const totalRevenue = invoices.reduce((acc, i) => acc + parseFloat(i.total_amount || 0), 0);
-  const totalPaid = payments.reduce((acc, p) => acc + parseFloat(p.amount_paid || 0), 0);
-  const outstandingRevenue = totalRevenue - totalPaid;
+  const overdueInvoices = unpaidInvoices.filter(
+    (invoice) => {
+      const dueDate = new Date(invoice.due_date);
+      return dueDate < today;
+    }
+  );
 
-  const overdueAmount = overdueInvoices.reduce((acc, i) => acc + parseFloat(i.total_amount || 0), 0);
+  const totalRevenue = invoices.reduce(
+    (sum, invoice) =>
+      sum + parseFloat(invoice.total_amount || 0),
+    0
+  );
+
+  const totalPaid = payments.reduce(
+    (sum, payment) =>
+      sum + parseFloat(payment.amount_paid || 0),
+    0
+  );
+
+  const outstandingRevenue =
+    totalRevenue - totalPaid;
+
+  const overdueAmount =
+    overdueInvoices.reduce(
+      (sum, invoice) =>
+        sum +
+        parseFloat(invoice.total_amount || 0),
+      0
+    );
 
   return (
-    <div className="panel">
-      <h1>💳 Payments & Billing Ledger</h1>
-      <p className="page-desc">
-        Record payments, audit transaction references, and manage outstanding or overdue invoice balances.
-      </p>
+    <div className="payments-page">
 
-      {/* KPI Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px", marginBottom: "30px" }}>
-        <div className="card" style={{ borderLeft: "4px solid #22c55e" }}>
-          <h3 style={{ fontSize: "14px", color: "#64748b" }}>TOTAL COLLECTED REVENUE</h3>
-          <h2 style={{ color: "#22c55e", fontSize: "28px" }}>₹{totalPaid.toLocaleString("en-IN")}</h2>
-          <p style={{ fontSize: "12px", color: "#94a3b8" }}>From all paid invoices</p>
-        </div>
-        <div className="card" style={{ borderLeft: "4px solid #eab308" }}>
-          <h3 style={{ fontSize: "14px", color: "#64748b" }}>OUTSTANDING RECEIVABLES</h3>
-          <h2 style={{ color: "#eab308", fontSize: "28px" }}>₹{outstandingRevenue > 0 ? outstandingRevenue.toLocaleString("en-IN") : 0}</h2>
-          <p style={{ fontSize: "12px", color: "#94a3b8" }}>Unpaid active accounts</p>
-        </div>
-        <div className="card" style={{ borderLeft: "4px solid #ef4444" }}>
-          <h3 style={{ fontSize: "14px", color: "#64748b" }}>OVERDUE ACCOUNTS</h3>
-          <h2 style={{ color: "#ef4444", fontSize: "28px" }}>₹{overdueAmount.toLocaleString("en-IN")}</h2>
-          <p style={{ fontSize: "12px", color: "#94a3b8" }}>Past payment deadline</p>
-        </div>
-      </div>
+      {/* HEADER */}
+      <section className="payments-header">
+        <div>
+          <span className="payments-eyebrow">
+            FINANCE OPERATIONS
+          </span>
 
-      {/* Payment Entry Form (Modal Style Overlay) */}
-      {selectedInvoice && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 100 }}>
-          <form onSubmit={handleRecordPayment} className="card" style={{ width: "450px", textAlign: "left", display: "flex", flexDirection: "column", gap: "16px", padding: "30px" }}>
-            <h2 style={{ color: "#38bdf8" }}>Record Invoice Payment</h2>
-            <p style={{ color: "#cbd5e1", fontSize: "14px" }}>
-              Invoice: <strong>{selectedInvoice.invoice_no}</strong><br/>
-              Customer: <strong>{selectedInvoice.customer_name}</strong><br/>
-              Total Balance: <strong>₹{parseFloat(selectedInvoice.total_amount).toLocaleString("en-IN")}</strong>
+          <h1>Payments & Ledger</h1>
+
+          <p>
+            Monitor receivables, record customer payments
+            and maintain a complete billing transaction
+            history.
+          </p>
+        </div>
+
+        <div className="ledger-status">
+          <span />
+          LEDGER SYNCHRONIZED
+        </div>
+      </section>
+
+      {/* ERROR */}
+      {error && (
+        <div className="payments-error">
+          <AlertCircle size={17} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* KPI CARDS */}
+      <section className="payment-kpi-grid">
+
+        <div className="payment-kpi-card">
+          <div className="payment-kpi-icon green">
+            <CircleDollarSign size={19} />
+          </div>
+
+          <div>
+            <span>Collected Revenue</span>
+
+            <strong>
+              ₹{totalPaid.toLocaleString("en-IN")}
+            </strong>
+
+            <small>
+              From recorded payments
+            </small>
+          </div>
+        </div>
+
+        <div className="payment-kpi-card">
+          <div className="payment-kpi-icon amber">
+            <WalletCards size={19} />
+          </div>
+
+          <div>
+            <span>Outstanding Receivables</span>
+
+            <strong>
+              ₹
+              {outstandingRevenue > 0
+                ? outstandingRevenue.toLocaleString(
+                    "en-IN"
+                  )
+                : "0"}
+            </strong>
+
+            <small>
+              {pendingInvoices.length} active account
+              {pendingInvoices.length !== 1
+                ? "s"
+                : ""}
+            </small>
+          </div>
+        </div>
+
+        <div className="payment-kpi-card">
+          <div className="payment-kpi-icon red">
+            <AlertCircle size={19} />
+          </div>
+
+          <div>
+            <span>Overdue Amount</span>
+
+            <strong>
+              ₹{overdueAmount.toLocaleString("en-IN")}
+            </strong>
+
+            <small>
+              {overdueInvoices.length} overdue account
+              {overdueInvoices.length !== 1
+                ? "s"
+                : ""}
+            </small>
+          </div>
+        </div>
+
+        <div className="payment-kpi-card">
+          <div className="payment-kpi-icon blue">
+            <CheckCircle2 size={19} />
+          </div>
+
+          <div>
+            <span>Paid Invoices</span>
+
+            <strong>
+              {paidInvoices.length}
+            </strong>
+
+            <small>
+              Successfully settled
+            </small>
+          </div>
+        </div>
+
+      </section>
+
+      {/* OUTSTANDING ACCOUNTS */}
+      <section className="payments-section">
+
+        <div className="payments-section-header">
+
+          <div>
+            <span className="section-label">
+              RECEIVABLES
+            </span>
+
+            <h2>Outstanding Accounts</h2>
+
+            <p>
+              Review unpaid invoices and record incoming
+              payments.
             </p>
+          </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Amount to Pay (₹)</label>
-              <input 
-                type="number" 
-                max={parseFloat(selectedInvoice.total_amount)}
-                min="0.01"
-                step="0.01"
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value)}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
-                required 
-              />
+          <div className="section-count">
+            {unpaidInvoices.length} OPEN
+          </div>
+
+        </div>
+
+        {unpaidInvoices.length > 0 ? (
+          <div className="payments-table-wrapper">
+
+            <table className="payments-table">
+
+              <thead>
+                <tr>
+                  <th>Invoice</th>
+                  <th>Customer</th>
+                  <th>Due Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Account State</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {unpaidInvoices.map((invoice) => {
+                  const isOverdue =
+                    new Date(invoice.due_date) <
+                    today;
+
+                  return (
+                    <tr key={invoice.invoice_id}>
+
+                      <td>
+                        <span className="payment-invoice-number">
+                          {invoice.invoice_no}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="payment-customer">
+                          <div className="payment-avatar">
+                            <UserRound size={14} />
+                          </div>
+
+                          <span>
+                            {invoice.customer_name ||
+                              "Unknown Customer"}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td>
+                        <div className="payment-date">
+                          <CalendarDays size={13} />
+
+                          {new Date(
+                            invoice.due_date
+                          ).toLocaleDateString()}
+                        </div>
+                      </td>
+
+                      <td>
+                        <strong className="payment-amount">
+                          ₹
+                          {parseFloat(
+                            invoice.total_amount || 0
+                          ).toLocaleString(
+                            "en-IN"
+                          )}
+                        </strong>
+                      </td>
+
+                      <td>
+                        <span
+                          className={
+                            invoice.payment_status ===
+                            "Partial"
+                              ? "payment-status partial"
+                              : "payment-status unpaid"
+                          }
+                        >
+                          {invoice.payment_status ===
+                          "Partial" ? (
+                            <Clock3 size={12} />
+                          ) : (
+                            <AlertCircle size={12} />
+                          )}
+
+                          {invoice.payment_status}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span
+                          className={
+                            isOverdue
+                              ? "account-state overdue"
+                              : "account-state active"
+                          }
+                        >
+                          <span className="state-dot" />
+
+                          {isOverdue
+                            ? "OVERDUE"
+                            : "ACTIVE"}
+                        </span>
+                      </td>
+
+                      <td>
+                        <button
+                          type="button"
+                          className="record-payment-button"
+                          onClick={() =>
+                            setSelectedInvoice(
+                              invoice
+                            )
+                          }
+                        >
+                          Record Payment
+                          <ArrowRight size={14} />
+                        </button>
+                      </td>
+
+                    </tr>
+                  );
+                })}
+              </tbody>
+
+            </table>
+
+          </div>
+        ) : (
+          <div className="payments-empty">
+            <div className="payments-empty-icon">
+              <CheckCircle2 size={24} />
             </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Method</label>
-              <select 
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
+            <h3>All accounts settled</h3>
+
+            <p>
+              There are currently no outstanding invoice
+              balances.
+            </p>
+          </div>
+        )}
+
+      </section>
+
+      {/* TRANSACTION HISTORY */}
+      <section className="payments-section history-section">
+
+        <div className="payments-section-header">
+
+          <div>
+            <span className="section-label">
+              TRANSACTION HISTORY
+            </span>
+
+            <h2>Billing Ledger</h2>
+
+            <p>
+              Complete record of payments received
+              through the platform.
+            </p>
+          </div>
+
+          <div className="history-icon">
+            <History size={19} />
+          </div>
+
+        </div>
+
+        {payments.length > 0 ? (
+          <div className="payments-table-wrapper">
+
+            <table className="payments-table">
+
+              <thead>
+                <tr>
+                  <th>Receipt ID</th>
+                  <th>Invoice</th>
+                  <th>Customer</th>
+                  <th>Amount Paid</th>
+                  <th>Method</th>
+                  <th>Reference</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {payments.map((payment) => (
+                  <tr key={payment.payment_id}>
+
+                    <td>
+                      <span className="receipt-id">
+                        PAY-
+                        {String(
+                          payment.payment_id
+                        ).padStart(5, "0")}
+                      </span>
+                    </td>
+
+                    <td>
+                      {payment.invoice_no || "N/A"}
+                    </td>
+
+                    <td>
+                      <div className="payment-customer">
+                        <div className="payment-avatar">
+                          <UserRound size={14} />
+                        </div>
+
+                        <span>
+                          {payment.customer_name ||
+                            "N/A"}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td>
+                      <strong className="collected-amount">
+                        ₹
+                        {parseFloat(
+                          payment.amount_paid || 0
+                        ).toLocaleString(
+                          "en-IN"
+                        )}
+                      </strong>
+                    </td>
+
+                    <td>
+                      <span className="method-badge">
+                        <CreditCard size={12} />
+                        {payment.payment_method}
+                      </span>
+                    </td>
+
+                    <td>
+                      <code className="reference-code">
+                        {payment.transaction_reference ||
+                          "N/A"}
+                      </code>
+                    </td>
+
+                    <td>
+                      <div className="payment-date">
+                        <CalendarDays size={13} />
+
+                        {new Date(
+                          payment.payment_date
+                        ).toLocaleDateString()}
+                      </div>
+                    </td>
+
+                  </tr>
+                ))}
+              </tbody>
+
+            </table>
+
+          </div>
+        ) : (
+          <div className="payments-empty">
+            <div className="payments-empty-icon">
+              <Receipt size={24} />
+            </div>
+
+            <h3>No transactions recorded</h3>
+
+            <p>
+              Payment transactions will appear here after
+              they are recorded.
+            </p>
+          </div>
+        )}
+
+      </section>
+
+      {/* PAYMENT MODAL */}
+      {selectedInvoice && (
+        <div
+          className="payment-modal-overlay"
+          onClick={() =>
+            !submitting &&
+            setSelectedInvoice(null)
+          }
+        >
+          <form
+            className="payment-modal"
+            onSubmit={handleRecordPayment}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
+            <div className="payment-modal-header">
+
+              <div>
+                <span className="section-label">
+                  PAYMENT ENTRY
+                </span>
+
+                <h2>Record Invoice Payment</h2>
+              </div>
+
+              <button
+                type="button"
+                className="payment-modal-close"
+                onClick={() =>
+                  setSelectedInvoice(null)
+                }
+                disabled={submitting}
               >
-                <option>Cash</option>
-                <option>UPI</option>
-                <option>Bank Transfer</option>
-                <option>Credit Card</option>
-                <option>Cheque</option>
-              </select>
+                <X size={18} />
+              </button>
+
             </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Transaction Reference</label>
-              <input 
+            {/* INVOICE CONTEXT */}
+            <div className="payment-invoice-context">
+
+              <div className="context-item">
+                <span>Invoice</span>
+                <strong>
+                  {selectedInvoice.invoice_no}
+                </strong>
+              </div>
+
+              <div className="context-item">
+                <span>Customer</span>
+                <strong>
+                  {selectedInvoice.customer_name}
+                </strong>
+              </div>
+
+              <div className="context-item">
+                <span>Invoice Total</span>
+                <strong>
+                  ₹
+                  {parseFloat(
+                    selectedInvoice.total_amount || 0
+                  ).toLocaleString("en-IN")}
+                </strong>
+              </div>
+
+            </div>
+
+            {/* AMOUNT */}
+            <div className="payment-form-field">
+
+              <label>
+                Amount to Pay
+              </label>
+
+              <div className="payment-amount-input">
+
+                <span>₹</span>
+
+                <input
+                  type="number"
+                  max={parseFloat(
+                    selectedInvoice.total_amount
+                  )}
+                  min="0.01"
+                  step="0.01"
+                  value={amountPaid}
+                  onChange={(e) =>
+                    setAmountPaid(
+                      e.target.value
+                    )
+                  }
+                  placeholder="0.00"
+                  required
+                />
+
+              </div>
+
+              <small>
+                Maximum accepted amount: ₹
+                {parseFloat(
+                  selectedInvoice.total_amount || 0
+                ).toLocaleString("en-IN")}
+              </small>
+
+            </div>
+
+            {/* METHOD */}
+            <div className="payment-form-field">
+
+              <label>
+                Payment Method
+              </label>
+
+              <div className="payment-method-grid">
+
+                {[
+                  "Cash",
+                  "UPI",
+                  "Bank Transfer",
+                  "Credit Card",
+                  "Cheque",
+                ].map((method) => (
+                  <button
+                    type="button"
+                    key={method}
+                    className={
+                      paymentMethod === method
+                        ? "payment-method-option active"
+                        : "payment-method-option"
+                    }
+                    onClick={() =>
+                      setPaymentMethod(
+                        method
+                      )
+                    }
+                  >
+                    <CreditCard size={13} />
+                    {method}
+                  </button>
+                ))}
+
+              </div>
+
+            </div>
+
+            {/* REFERENCE */}
+            <div className="payment-form-field">
+
+              <label>
+                Transaction Reference
+              </label>
+
+              <input
+                type="text"
                 placeholder="TXN-XXXXXX"
                 value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
+                onChange={(e) =>
+                  setReference(
+                    e.target.value
+                  )
+                }
               />
+
             </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Remarks</label>
-              <textarea 
-                rows="2"
-                placeholder="Payment notes..."
+            {/* REMARKS */}
+            <div className="payment-form-field">
+
+              <label>
+                Remarks
+              </label>
+
+              <textarea
+                rows="3"
+                placeholder="Add payment notes or transaction remarks..."
                 value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white", fontFamily: "inherit" }}
+                onChange={(e) =>
+                  setRemarks(
+                    e.target.value
+                  )
+                }
               />
+
             </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-              <button 
-                type="submit" 
+            {/* ACTIONS */}
+            <div className="payment-modal-actions">
+
+              <button
+                type="button"
+                className="payment-cancel-button"
+                onClick={() =>
+                  setSelectedInvoice(null)
+                }
                 disabled={submitting}
-                style={{ flex: 1, background: "#38bdf8", color: "#020617", fontWeight: "bold", padding: "12px", borderRadius: "8px", border: "none", cursor: "pointer" }}
-              >
-                {submitting ? "Logging Payment..." : "Record Payment"}
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setSelectedInvoice(null)}
-                style={{ flex: 1, background: "#334155", color: "white", padding: "12px", borderRadius: "8px", border: "none", cursor: "pointer" }}
               >
                 Cancel
               </button>
+
+              <button
+                type="submit"
+                className="payment-submit-button"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <LoaderCircle
+                      size={15}
+                      className="payments-spinner"
+                    />
+                    Recording...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={15} />
+                    Record Payment
+                  </>
+                )}
+              </button>
+
             </div>
+
           </form>
         </div>
       )}
 
-      {/* Active Ledgers Lists */}
-      <div className="card" style={{ marginTop: "24px" }}>
-        <h2>Outstanding Accounts</h2>
-        {unpaidInvoices.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Invoice</th>
-                <th>Customer</th>
-                <th>Due Date</th>
-                <th>Amount</th>
-                <th>Payment Status</th>
-                <th>Age</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unpaidInvoices.map((inv) => {
-                const isOverdue = new Date(inv.due_date) < today;
-                return (
-                  <tr key={inv.invoice_id}>
-                    <td>{inv.invoice_no}</td>
-                    <td>{inv.customer_name}</td>
-                    <td>{new Date(inv.due_date).toLocaleDateString()}</td>
-                    <td>₹{parseFloat(inv.total_amount).toLocaleString("en-IN")}</td>
-                    <td>
-                      <span style={{ 
-                        padding: "4px 8px", 
-                        borderRadius: "10px", 
-                        fontSize: "11px", 
-                        fontWeight: "bold",
-                        background: inv.payment_status === "Partial" ? "rgba(245, 158, 11, 0.15)" : "rgba(239, 68, 68, 0.15)",
-                        color: inv.payment_status === "Partial" ? "#f59e0b" : "#ef4444"
-                      }}>
-                        {inv.payment_status}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ color: isOverdue ? "#ef4444" : "#22c55e", fontWeight: "bold", fontSize: "12px" }}>
-                        {isOverdue ? "🔥 OVERDUE" : "⏳ Active"}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        onClick={() => setSelectedInvoice(inv)}
-                        style={{ padding: "6px 12px", background: "#38bdf8", color: "#020617", fontSize: "12px", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" }}
-                      >
-                        Log Payment
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        ) : (
-          <p style={{ color: "#64748b" }}>All active accounts are fully settled.</p>
-        )}
-      </div>
-
-      <div className="card" style={{ marginTop: "30px" }}>
-        <h2>Billing Transaction History</h2>
-        {payments.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Receipt ID</th>
-                <th>Invoice No</th>
-                <th>Customer</th>
-                <th>Amount Paid</th>
-                <th>Method</th>
-                <th>Reference</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((pay) => (
-                <tr key={pay.payment_id}>
-                  <td>PAY-{String(pay.payment_id).padStart(5, "0")}</td>
-                  <td>{pay.invoice_no || "N/A"}</td>
-                  <td>{pay.customer_name || "N/A"}</td>
-                  <td style={{ color: "#22c55e", fontWeight: "bold" }}>₹{parseFloat(pay.amount_paid).toLocaleString("en-IN")}</td>
-                  <td>{pay.payment_method}</td>
-                  <td><code style={{ background: "transparent", color: "#38bdf8" }}>{pay.transaction_reference || "N/A"}</code></td>
-                  <td>{new Date(pay.payment_date).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p style={{ color: "#64748b" }}>No payments logged in the history database.</p>
-        )}
-      </div>
     </div>
   );
 }

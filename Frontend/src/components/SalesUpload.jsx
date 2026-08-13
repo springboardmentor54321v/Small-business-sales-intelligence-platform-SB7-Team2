@@ -1,5 +1,16 @@
 import { useState } from "react";
+import {
+  Upload,
+  FileSpreadsheet,
+  CheckCircle2,
+  AlertTriangle,
+  Database,
+  X,
+  RefreshCw,
+  UploadCloud,
+} from "lucide-react";
 import api from "../api";
+import "./SalesUpload.css";
 
 function SalesUpload() {
   const [fileName, setFileName] = useState("");
@@ -13,7 +24,7 @@ function SalesUpload() {
     "product_id",
     "quantity",
     "payment_method",
-    "payment_status"
+    "payment_status",
   ];
 
   const handleFileUpload = (file) => {
@@ -24,48 +35,70 @@ function SalesUpload() {
     setErrors([]);
     setPreviewData([]);
 
-    if (!file.name.endsWith(".csv")) {
+    if (!file.name.toLowerCase().endsWith(".csv")) {
       setErrors(["Only CSV files are allowed."]);
       return;
     }
 
     const reader = new FileReader();
+
     reader.onload = (event) => {
       const text = event.target.result;
-      const rows = text.split("\n").filter((row) => row.trim() !== "");
+
+      const rows = text
+        .split("\n")
+        .filter((row) => row.trim() !== "");
 
       if (rows.length < 2) {
-        setErrors(["CSV file must contain a header row and at least one data row."]);
+        setErrors([
+          "CSV file must contain a header row and at least one data row.",
+        ]);
         return;
       }
 
-      const headers = rows[0].split(",").map((h) => h.trim().toLowerCase());
-      const missingFields = requiredFields.filter((field) => !headers.includes(field));
+      const headers = rows[0]
+        .split(",")
+        .map((h) => h.trim().toLowerCase());
+
+      const missingFields = requiredFields.filter(
+        (field) => !headers.includes(field)
+      );
 
       if (missingFields.length > 0) {
-        setErrors([`Missing required fields: ${missingFields.join(", ")}`]);
+        setErrors([
+          `Missing required fields: ${missingFields.join(", ")}`,
+        ]);
         return;
       }
 
       try {
         const data = rows.slice(1, 6).map((row) => {
           const values = row.split(",");
-          let obj = {};
+          const obj = {};
+
           headers.forEach((header, index) => {
-            obj[header] = values[index] ? values[index].trim() : "";
+            obj[header] = values[index]
+              ? values[index].trim()
+              : "";
           });
+
           return obj;
         });
+
         setPreviewData(data);
       } catch (err) {
-        setErrors(["Failed to generate preview rows from CSV."]);
+        setErrors([
+          "Failed to generate preview rows from CSV.",
+        ]);
       }
     };
+
     reader.readAsText(file);
   };
 
   const handleDrop = (event) => {
     event.preventDefault();
+
     if (event.dataTransfer.files.length > 0) {
       handleFileUpload(event.dataTransfer.files[0]);
     }
@@ -75,116 +108,351 @@ function SalesUpload() {
     event.preventDefault();
   };
 
+  const clearFile = () => {
+    setFileName("");
+    setSelectedFile(null);
+    setPreviewData([]);
+    setErrors([]);
+  };
+
   const uploadSalesCSV = async () => {
     if (!selectedFile) {
       alert("Please choose a CSV file first.");
       return;
     }
+
     setUploading(true);
 
     try {
       const formData = new FormData();
+
       formData.append("file", selectedFile);
 
-      const response = await api.post("/api/upload/sales", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await api.post(
+        "/api/upload/sales",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       alert(
         `Sales CSV uploaded successfully!\nInserted rows: ${response.data.inserted}\nFailed/Duplicate rows: ${response.data.failed}`
       );
-      setSelectedFile(null);
-      setFileName("");
-      setPreviewData([]);
+
+      clearFile();
     } catch (error) {
-      alert(error.formattedMessage || "CSV Upload Failed. Ensure categories/products/inventory are configured.");
+      alert(
+        error.formattedMessage ||
+          "CSV Upload Failed. Ensure categories/products/inventory are configured."
+      );
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div className="panel">
-      <h1>📥 Sales Transactions Batch Ingestion</h1>
-      <p className="page-desc">
-        Ingest batch sales transaction logs in CSV format. The ingestion will auto-validate, decrement inventory counts, and log transactions.
-      </p>
+    <div className="sales-upload-page">
+      {/* HEADER */}
+      <section className="sales-upload-header">
+        <div>
+          <span className="sales-upload-eyebrow">
+            DATA OPERATIONS
+          </span>
 
-      <div className="card" style={{ padding: "30px" }}>
-        <div
-          className="upload-box"
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          style={{
-            border: "2px dashed #38bdf8",
-            background: "#020617",
-            borderRadius: "12px",
-            padding: "40px 20px",
-            cursor: "pointer",
-            textAlign: "center"
-          }}
-        >
-          <span style={{ fontSize: "40px", display: "block", marginBottom: "10px" }}>📁</span>
-          <p style={{ margin: "0 0 16px", color: "#94a3b8" }}>Drag and drop your sales CSV file here or</p>
-          <label className="file-btn" style={{ background: "#38bdf8", color: "#020617", padding: "10px 20px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" }}>
-            Browse Computer
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(e) => handleFileUpload(e.target.files[0])}
-              style={{ display: "none" }}
-            />
-          </label>
+          <h1>Sales Data Upload</h1>
+
+          <p>
+            Import batch sales transactions securely through
+            CSV ingestion. The platform validates the file,
+            previews the data and updates transaction records.
+          </p>
         </div>
 
-        {fileName && (
-          <div style={{ marginTop: "20px", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#020617", padding: "12px 18px", borderRadius: "8px", border: "1px solid #1e293b" }}>
-            <span style={{ color: "#38bdf8", fontWeight: "bold" }}>Selected File: {fileName}</span>
-            <button
-              onClick={uploadSalesCSV}
-              disabled={uploading || errors.length > 0}
-              style={{ padding: "8px 16px", background: "#22c55e", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" }}
-            >
-              {uploading ? "Uploading..." : "Commit Batch"}
-            </button>
-          </div>
-        )}
+        <div className="upload-status-badge">
+          <span className="status-dot" />
+          CSV INGESTION READY
+        </div>
+      </section>
 
+      {/* PROCESS OVERVIEW */}
+      <section className="upload-process">
+        <div className="process-step active">
+          <div className="process-number">01</div>
+
+          <div>
+            <strong>Select File</strong>
+            <span>Choose your CSV dataset</span>
+          </div>
+        </div>
+
+        <div className="process-line" />
+
+        <div
+          className={`process-step ${
+            previewData.length > 0 ? "active" : ""
+          }`}
+        >
+          <div className="process-number">02</div>
+
+          <div>
+            <strong>Validate & Preview</strong>
+            <span>Review the first five rows</span>
+          </div>
+        </div>
+
+        <div className="process-line" />
+
+        <div className="process-step">
+          <div className="process-number">03</div>
+
+          <div>
+            <strong>Commit Batch</strong>
+            <span>Insert transactions</span>
+          </div>
+        </div>
+      </section>
+
+      {/* UPLOAD PANEL */}
+      <section className="sales-upload-panel">
+        <div className="upload-panel-header">
+          <div>
+            <span className="sales-section-label">
+              TRANSACTION INGESTION
+            </span>
+
+            <h2>Upload Sales Dataset</h2>
+
+            <p>
+              Accepted format: CSV. Required transaction fields
+              are validated before ingestion.
+            </p>
+          </div>
+
+          <div className="upload-file-icon">
+            <FileSpreadsheet size={22} />
+          </div>
+        </div>
+
+        {/* DROP ZONE */}
+        <div
+          className={`sales-drop-zone ${
+            selectedFile ? "has-file" : ""
+          }`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        >
+          <div className="drop-icon">
+            {selectedFile ? (
+              <FileSpreadsheet size={30} />
+            ) : (
+              <UploadCloud size={30} />
+            )}
+          </div>
+
+          {selectedFile ? (
+            <>
+              <h3>{fileName}</h3>
+
+              <p>
+                File selected and ready for validation.
+              </p>
+
+              <button
+                type="button"
+                className="change-file-button"
+                onClick={clearFile}
+              >
+                <X size={14} />
+                Remove File
+              </button>
+            </>
+          ) : (
+            <>
+              <h3>Drop your sales CSV here</h3>
+
+              <p>
+                Drag and drop your dataset or browse your
+                computer.
+              </p>
+
+              <label className="browse-file-button">
+                <Upload size={16} />
+                Browse Computer
+
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) =>
+                    handleFileUpload(e.target.files[0])
+                  }
+                />
+              </label>
+
+              <span className="file-hint">
+                CSV files only
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* VALIDATION ERROR */}
         {errors.length > 0 && (
-          <div className="error-box" style={{ marginTop: "20px", textAlign: "left" }}>
-            <h3 style={{ margin: "0 0 10px", color: "#fecaca" }}>CSV Formatting Errors</h3>
-            {errors.map((error, idx) => (
-              <p key={idx} style={{ margin: "4px 0", fontSize: "14px" }}>• {error}</p>
-            ))}
+          <div className="sales-error-box">
+            <div className="sales-error-icon">
+              <AlertTriangle size={18} />
+            </div>
+
+            <div>
+              <strong>CSV Validation Failed</strong>
+
+              {errors.map((error, index) => (
+                <p key={index}>{error}</p>
+              ))}
+            </div>
           </div>
         )}
 
+        {/* FILE READY */}
+        {selectedFile && errors.length === 0 && (
+          <div className="selected-file-bar">
+            <div className="selected-file-info">
+              <div className="selected-file-icon">
+                <FileSpreadsheet size={18} />
+              </div>
+
+              <div>
+                <strong>{fileName}</strong>
+
+                <span>
+                  {previewData.length > 0
+                    ? "Validation successful"
+                    : "Processing file..."}
+                </span>
+              </div>
+            </div>
+
+            <div className="file-ready">
+              <CheckCircle2 size={15} />
+              Ready
+            </div>
+          </div>
+        )}
+
+        {/* PREVIEW */}
         {previewData.length > 0 && (
-          <div className="preview-box" style={{ marginTop: "30px", textAlign: "left" }}>
-            <h3 style={{ color: "#38bdf8", marginBottom: "12px" }}>Ingestion Preview (First 5 Rows)</h3>
-            <table>
-              <thead>
-                <tr>
-                  {requiredFields.map((field) => (
-                    <th key={field}>{field}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewData.map((row, index) => (
-                  <tr key={index}>
+          <div className="sales-preview">
+            <div className="preview-header">
+              <div>
+                <span className="sales-section-label">
+                  DATA VALIDATION
+                </span>
+
+                <h3>Ingestion Preview</h3>
+
+                <p>
+                  Showing the first {previewData.length} rows
+                  from your selected dataset.
+                </p>
+              </div>
+
+              <div className="preview-valid">
+                <CheckCircle2 size={15} />
+                Valid structure
+              </div>
+            </div>
+
+            <div className="sales-table-wrapper">
+              <table className="sales-preview-table">
+                <thead>
+                  <tr>
                     {requiredFields.map((field) => (
-                      <td key={field}>{row[field]}</td>
+                      <th key={field}>{field}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {previewData.map((row, index) => (
+                    <tr key={index}>
+                      {requiredFields.map((field) => (
+                        <td key={field}>
+                          {row[field] || "—"}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-      </div>
+
+        {/* COMMIT */}
+        {selectedFile &&
+          errors.length === 0 &&
+          previewData.length > 0 && (
+            <div className="commit-section">
+              <div className="commit-info">
+                <Database size={20} />
+
+                <div>
+                  <strong>Ready to commit batch</strong>
+
+                  <span>
+                    This will send the validated CSV to the
+                    sales transaction service.
+                  </span>
+                </div>
+              </div>
+
+              <button
+                className="commit-button"
+                onClick={uploadSalesCSV}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <RefreshCw
+                      size={16}
+                      className="upload-spin"
+                    />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={16} />
+                    Commit Batch
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+      </section>
+
+      {/* REQUIRED FIELDS */}
+      <section className="required-fields-panel">
+        <div>
+          <span className="sales-section-label">
+            DATA CONTRACT
+          </span>
+
+          <h2>Required CSV Fields</h2>
+
+          <p>
+            Your dataset must contain the following columns
+            before it can be processed.
+          </p>
+        </div>
+
+        <div className="required-fields-list">
+          {requiredFields.map((field) => (
+            <span key={field}>{field}</span>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
