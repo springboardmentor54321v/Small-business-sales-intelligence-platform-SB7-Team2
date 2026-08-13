@@ -68,56 +68,80 @@ function Recommendation() {
   }, []);
 
   const fetchRecommendations = async (prod) => {
-    if (!prod) return;
+  if (!prod) return;
 
-    setRecsLoading(true);
-    setRecommendations([]);
+  setRecsLoading(true);
+  setRecommendations([]);
 
-    try {
-      const id = prod.product_id;
-      const response = await aiApi.get(`/recommend-product/${id}`);
+  try {
+    const id = prod.product_id;
 
-      if (response.data && !response.data.message) {
-        setRecommendations(response.data);
-      } else {
-        const matching = products
-          .filter(
-            (p) =>
-              String(p.product_id) !== String(id) &&
-              p.category_id === prod.category_id
-          )
-          .slice(0, 3);
+    const response = await aiApi.get(`/recommend-product/${id}`);
 
-        setRecommendations(
-          matching.map((p) => ({
-            "Product ID": p.product_id,
-            "Product Name": p.product_name,
-            Category: p.category_name || "General",
-          }))
-        );
-      }
-    } catch (err) {
-      console.error("Recommendation error:", err);
+    console.log("AI Recommendation Response:", response.data);
 
-      const matching = products
-        .filter(
-          (p) =>
-            String(p.product_id) !== String(prod.product_id) &&
-            p.category_id === prod.category_id
-        )
-        .slice(0, 3);
+    const data = response.data;
 
-      setRecommendations(
-        matching.map((p) => ({
-          "Product ID": p.product_id,
-          "Product Name": p.product_name,
-          Category: p.category_name || "General",
-        }))
-      );
-    } finally {
-      setRecsLoading(false);
+    // Normalize different possible API response formats
+    let recommendationList = [];
+
+    if (Array.isArray(data)) {
+      recommendationList = data;
+    } else if (Array.isArray(data.recommendations)) {
+      recommendationList = data.recommendations;
+    } else if (Array.isArray(data.products)) {
+      recommendationList = data.products;
+    } else if (Array.isArray(data.results)) {
+      recommendationList = data.results;
+    } else if (Array.isArray(data.data)) {
+      recommendationList = data.data;
     }
-  };
+
+    // If AI API returned valid recommendations
+    if (recommendationList.length > 0) {
+      setRecommendations(recommendationList);
+      return;
+    }
+
+    // Fallback: recommend products from the same category
+    const matching = products
+      .filter(
+        (p) =>
+          String(p.product_id) !== String(id) &&
+          String(p.category_id) === String(prod.category_id)
+      )
+      .slice(0, 3);
+
+    setRecommendations(
+      matching.map((p) => ({
+        "Product ID": p.product_id,
+        "Product Name": p.product_name,
+        Category: p.category_name || "General",
+      }))
+    );
+  } catch (err) {
+    console.error("Recommendation error:", err);
+
+    // Fallback recommendations if AI service fails
+    const matching = products
+      .filter(
+        (p) =>
+          String(p.product_id) !== String(prod.product_id) &&
+          String(p.category_id) === String(prod.category_id)
+      )
+      .slice(0, 3);
+
+    setRecommendations(
+      matching.map((p) => ({
+        "Product ID": p.product_id,
+        "Product Name": p.product_name,
+        Category: p.category_name || "General",
+      }))
+    );
+  } finally {
+    setRecsLoading(false);
+  }
+};
 
   useEffect(() => {
     if (selectedProduct) {
@@ -552,9 +576,9 @@ function Recommendation() {
                     <RefreshCw size={20} />
                     <span>Generating recommendations...</span>
                   </div>
-                ) : recommendations.length > 0 ? (
-                  <div className="recommendation-list">
-                    {recommendations.map((item, index) => (
+                ) : Array.isArray(recommendations) && recommendations.length > 0 ? (
+  <div className="recommendation-list">
+    {recommendations.map((item, index) => (
                       <div
                         className="recommendation-row"
                         key={index}
