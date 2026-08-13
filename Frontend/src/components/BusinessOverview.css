@@ -1,0 +1,363 @@
+/* =========================================================
+   MARKETMIND AI — BUSINESS OVERVIEW
+   Modern responsive theme
+   ========================================================= */
+
+.business-overview-page {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 34px 36px 50px;
+  color: var(--text);
+}
+
+/* =========================
+   HEADER
+   ========================= */
+
+.business-overview-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.section-eyebrow {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.business-overview-header h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+}
+
+.business-overview-header p {
+  margin: 12px 0 0;
+  max-width: 760px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.overview-refresh {
+  flex-shrink: 0;
+  min-width: 140px;
+  padding: 13px 22px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #062033;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.overview-refresh:hover {
+  background: var(--accent-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.18);
+}
+
+/* =========================
+   STAT CARDS
+   ========================= */
+
+.business-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.overview-stat-card {
+  min-height: 178px;
+  padding: 26px 28px;
+  position: relative;
+  overflow: hidden;
+
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: var(--shadow);
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.overview-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-light);
+}
+
+.stat-card-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 38px;
+}
+
+.stat-card-top span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 10px 16px;
+  border-radius: 10px;
+
+  background: var(--accent-soft);
+  color: var(--accent);
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.overview-stat-card p {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.overview-stat-card h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.overview-stat-card small {
+  display: block;
+  margin-top: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* =========================
+   CHART GRID
+   ========================= */
+
+.overview-chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(360px, 1fr);
+  gap: 22px;
+}
+
+.overview-chart-card {
+  min-width: 0;
+  min-height: 470px;
+  padding: 28px;
+
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: var(--shadow);
+}
+
+.overview-chart-large {
+  min-height: 500px;
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-card-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.chart-card-header p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.overview-chart-area {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  margin-top: 24px;
+}
+
+.overview-chart-large .overview-chart-area {
+  height: 380px;
+}
+
+/* =========================
+   EMPTY STATE
+   ========================= */
+
+.overview-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--text-muted);
+  font-size: 14px;
+
+  border: 1px dashed var(--border-light);
+  border-radius: 12px;
+}
+
+/* =========================
+   LIGHT MODE
+   ========================= */
+
+.app.light .overview-stat-card,
+.app.light .overview-chart-card {
+  background: #ffffff;
+  border-color: #dbe4ef;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.07);
+}
+
+.app.light .overview-stat-card:hover,
+.app.light .overview-chart-card:hover {
+  border-color: #bfdbfe;
+}
+
+.app.light .overview-stat-card h2,
+.app.light .overview-chart-card h2,
+.app.light .business-overview-header h1 {
+  color: #0f172a;
+}
+
+.app.light .overview-stat-card p {
+  color: #64748b;
+}
+
+.app.light .overview-stat-card small,
+.app.light .chart-card-header p,
+.app.light .business-overview-header p {
+  color: #475569;
+}
+
+.app.light .stat-card-top span {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+}
+
+.app.light .chart-card-header {
+  border-bottom-color: #e2e8f0;
+}
+
+/* =========================
+   DARK MODE
+   ========================= */
+
+.app.dark .overview-stat-card,
+.app.dark .overview-chart-card {
+  background: #0d1422;
+  border-color: #1b2b42;
+}
+
+.app.dark .overview-stat-card h2,
+.app.dark .overview-chart-card h2,
+.app.dark .business-overview-header h1 {
+  color: #f8fafc;
+}
+
+.app.dark .overview-stat-card p {
+  color: #64748b;
+}
+
+.app.dark .overview-stat-card small,
+.app.dark .chart-card-header p,
+.app.dark .business-overview-header p {
+  color: #94a3b8;
+}
+
+.app.dark .stat-card-top span {
+  background: rgba(56, 189, 248, 0.09);
+  color: #38bdf8;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 1200px) {
+  .business-overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overview-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .business-overview-page {
+    padding: 24px 18px 40px;
+  }
+
+  .business-overview-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .business-overview-header h1 {
+    font-size: 34px;
+  }
+
+  .overview-refresh {
+    width: 100%;
+  }
+
+  .business-overview-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-chart-card {
+    padding: 20px;
+    min-height: 420px;
+  }
+
+  .overview-chart-area,
+  .overview-chart-large .overview-chart-area {
+    height: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .business-overview-header h1 {
+    font-size: 29px;
+  }
+
+  .overview-stat-card {
+    padding: 22px;
+  }
+
+  .overview-stat-card h2 {
+    font-size: 26px;
+  }
+}

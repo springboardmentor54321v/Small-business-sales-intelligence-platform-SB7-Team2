@@ -1,22 +1,40 @@
 import { useState, useEffect } from "react";
+import {
+  FilePlus2,
+  UserRound,
+  CalendarDays,
+  Package,
+  Plus,
+  Trash2,
+  Receipt,
+  CreditCard,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  LoaderCircle,
+} from "lucide-react";
 import api from "../api";
+import "./CreateInvoice.css";
 
 function CreateInvoice() {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Invoice Fields
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
-  const [taxRate, setTaxRate] = useState(18); // Default 18% GST
+  const [taxRate, setTaxRate] = useState(18);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState("Unpaid");
 
-  // Items in the current invoice
   const [invoiceItems, setInvoiceItems] = useState([
-    { product_id: "", quantity: 1, unit_price: 0, stock_quantity: 0 }
+    {
+      product_id: "",
+      quantity: 1,
+      unit_price: 0,
+      stock_quantity: 0,
+    },
   ]);
 
   const [submitting, setSubmitting] = useState(false);
@@ -26,103 +44,142 @@ function CreateInvoice() {
       try {
         const [custRes, prodRes, invRes] = await Promise.all([
           api.get("/api/customers"),
-          // Fetch products catalog, but also fetch inventory to check stock
           api.get("/api/products"),
-          api.get("/api/inventory")
+          api.get("/api/inventory"),
         ]);
 
         const custs = custRes.data.customers || [];
         const prods = prodRes.data.products || [];
-        const invList = invRes.data.inventory || invRes.data || [];
+        const invList =
+          invRes.data.inventory || invRes.data || [];
 
-        // Join products with inventory stock levels
-        const mappedProducts = prods.map(p => {
-          const inv = invList.find(i => String(i.product_id) === String(p.product_id));
+        const mappedProducts = prods.map((p) => {
+          const inv = invList.find(
+            (i) =>
+              String(i.product_id) ===
+              String(p.product_id)
+          );
+
           return {
             ...p,
-            stock_quantity: inv ? inv.stock_quantity : 0
+            stock_quantity: inv
+              ? inv.stock_quantity
+              : 0,
           };
         });
 
         setCustomers(custs);
         setProducts(mappedProducts);
 
-        if (custs.length > 0) setSelectedCustomerId(custs[0].customer_id);
-        
-        // Initialize first item dropdown
+        if (custs.length > 0) {
+          setSelectedCustomerId(custs[0].customer_id);
+        }
+
         if (mappedProducts.length > 0) {
           setInvoiceItems([
-            { 
-              product_id: mappedProducts[0].product_id, 
-              quantity: 1, 
-              unit_price: parseFloat(mappedProducts[0].price),
-              stock_quantity: mappedProducts[0].stock_quantity
-            }
+            {
+              product_id: mappedProducts[0].product_id,
+              quantity: 1,
+              unit_price: parseFloat(
+                mappedProducts[0].price
+              ),
+              stock_quantity:
+                mappedProducts[0].stock_quantity,
+            },
           ]);
         }
 
-        // Set default due date to 30 days from now
         const defaultDue = new Date();
         defaultDue.setDate(defaultDue.getDate() + 30);
-        setDueDate(defaultDue.toISOString().split("T")[0]);
 
+        setDueDate(
+          defaultDue.toISOString().split("T")[0]
+        );
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
+
     loadInvoiceOptions();
   }, []);
 
   const handleAddItem = () => {
     if (products.length === 0) return;
+
     setInvoiceItems([
       ...invoiceItems,
-      { 
-        product_id: products[0].product_id, 
-        quantity: 1, 
+      {
+        product_id: products[0].product_id,
+        quantity: 1,
         unit_price: parseFloat(products[0].price),
-        stock_quantity: products[0].stock_quantity
-      }
+        stock_quantity: products[0].stock_quantity,
+      },
     ]);
   };
 
   const handleRemoveItem = (index) => {
     if (invoiceItems.length === 1) return;
-    setInvoiceItems(invoiceItems.filter((_, idx) => idx !== index));
+
+    setInvoiceItems(
+      invoiceItems.filter((_, idx) => idx !== index)
+    );
   };
 
   const handleItemChange = (index, field, value) => {
     const updated = [...invoiceItems];
-    
+
     if (field === "product_id") {
-      const prod = products.find(p => String(p.product_id) === String(value));
+      const prod = products.find(
+        (p) =>
+          String(p.product_id) === String(value)
+      );
+
       if (prod) {
         updated[index].product_id = value;
-        updated[index].unit_price = parseFloat(prod.price);
-        updated[index].stock_quantity = prod.stock_quantity;
+        updated[index].unit_price = parseFloat(
+          prod.price
+        );
+        updated[index].stock_quantity =
+          prod.stock_quantity;
       }
     } else if (field === "quantity") {
-      updated[index].quantity = parseInt(value, 10) || 1;
+      updated[index].quantity =
+        parseInt(value, 10) || 1;
     }
-    
+
     setInvoiceItems(updated);
   };
 
-  // Calculations
-  const subtotal = invoiceItems.reduce((acc, item) => acc + (item.unit_price * item.quantity), 0);
+  const subtotal = invoiceItems.reduce(
+    (acc, item) =>
+      acc + item.unit_price * item.quantity,
+    0
+  );
+
   const taxAmount = (subtotal * taxRate) / 100;
-  const totalAmount = subtotal + taxAmount - parseFloat(discountAmount || 0);
+
+  const totalAmount =
+    subtotal +
+    taxAmount -
+    parseFloat(discountAmount || 0);
 
   const handleSubmitInvoice = async (e) => {
     e.preventDefault();
-    if (!selectedCustomerId || invoiceItems.length === 0) return;
 
-    // Check stock quantities
+    if (
+      !selectedCustomerId ||
+      invoiceItems.length === 0
+    ) {
+      return;
+    }
+
     for (const item of invoiceItems) {
       if (item.quantity > item.stock_quantity) {
-        alert(`Insufficient stock level for product item! Available: ${item.stock_quantity}, Requested: ${item.quantity}`);
+        alert(
+          `Insufficient stock level for product item! Available: ${item.stock_quantity}, Requested: ${item.quantity}`
+        );
         return;
       }
     }
@@ -130,240 +187,610 @@ function CreateInvoice() {
     setSubmitting(true);
 
     try {
-      // Decode user ID from token
-      const profileRes = await api.get("/api/auth/profile");
-      const userId = profileRes.data.user.user_id;
+      const profileRes = await api.get(
+        "/api/auth/profile"
+      );
+
+      const userId =
+        profileRes.data.user.user_id;
 
       const payload = {
-        customer_id: parseInt(selectedCustomerId, 10),
+        customer_id: parseInt(
+          selectedCustomerId,
+          10
+        ),
         user_id: userId,
         due_date: dueDate,
-        items: invoiceItems.map(item => ({
-          product_id: parseInt(item.product_id, 10),
-          quantity: item.quantity
+        items: invoiceItems.map((item) => ({
+          product_id: parseInt(
+            item.product_id,
+            10
+          ),
+          quantity: item.quantity,
         })),
         tax: taxAmount,
-        discount: parseFloat(discountAmount || 0),
+        discount: parseFloat(
+          discountAmount || 0
+        ),
         notes: notes,
-        payment_status: paymentStatus
+        payment_status: paymentStatus,
       };
 
-      const response = await api.post("/api/invoices", payload);
-      alert(`Invoice ${response.data.invoice_no} created successfully!`);
-      
-      // Reset page inputs
+      const response = await api.post(
+        "/api/invoices",
+        payload
+      );
+
+      alert(
+        `Invoice ${response.data.invoice_no} created successfully!`
+      );
+
       if (products.length > 0) {
         setInvoiceItems([
-          { 
-            product_id: products[0].product_id, 
-            quantity: 1, 
-            unit_price: parseFloat(products[0].price),
-            stock_quantity: products[0].stock_quantity
-          }
+          {
+            product_id: products[0].product_id,
+            quantity: 1,
+            unit_price: parseFloat(
+              products[0].price
+            ),
+            stock_quantity:
+              products[0].stock_quantity,
+          },
         ]);
       }
+
       setNotes("");
       setDiscountAmount(0);
-      
     } catch (err) {
-      alert(err.formattedMessage || "Failed to submit new invoice.");
+      alert(
+        err.formattedMessage ||
+          "Failed to submit new invoice."
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   if (loading) {
-    return <div className="panel"><div className="spinner"></div><p>Drafting sales billing layout...</p></div>;
+    return (
+      <div className="create-invoice-loading">
+        <LoaderCircle
+          size={28}
+          className="invoice-loader"
+        />
+        <span>
+          Loading invoice workspace...
+        </span>
+      </div>
+    );
   }
 
   return (
-    <div className="panel">
-      <h1>🧾 Generate Billing Invoice</h1>
-      <p className="page-desc">
-        Draft customer ledger billing sheets. This will automatically deduct inventory quantities and record accounts receivables.
-      </p>
+    <div className="create-invoice-page">
 
-      <form onSubmit={handleSubmitInvoice} style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "24px", marginTop: "20px" }}>
-        
-        {/* Main Details & Line Items */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          
-          {/* Header metadata */}
-          <div className="card" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", textAlign: "left" }}>
-            <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Customer Account</label>
-              <select 
-                value={selectedCustomerId}
-                onChange={(e) => setSelectedCustomerId(e.target.value)}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
-                required
+      {/* HEADER */}
+      <section className="create-invoice-header">
+        <div>
+          <span className="create-invoice-eyebrow">
+            FINANCE OPERATIONS
+          </span>
+
+          <h1>Create Invoice</h1>
+
+          <p>
+            Generate a new customer invoice with
+            inventory-aware line items, tax,
+            discounts and payment status.
+          </p>
+        </div>
+
+        <div className="invoice-draft-status">
+          <span />
+          NEW INVOICE DRAFT
+        </div>
+      </section>
+
+      <form
+        onSubmit={handleSubmitInvoice}
+        className="invoice-builder"
+      >
+
+        {/* MAIN COLUMN */}
+        <div className="invoice-builder-main">
+
+          {/* CUSTOMER */}
+          <section className="invoice-form-card">
+
+            <div className="invoice-card-header">
+              <div className="invoice-card-title">
+                <div className="invoice-card-icon">
+                  <UserRound size={18} />
+                </div>
+
+                <div>
+                  <span>
+                    BILLING INFORMATION
+                  </span>
+                  <h2>Customer & Due Date</h2>
+                </div>
+              </div>
+            </div>
+
+            <div className="invoice-form-grid">
+
+              <div className="invoice-field">
+                <label>
+                  Customer Account
+                </label>
+
+                <div className="invoice-input-wrap">
+                  <UserRound size={15} />
+
+                  <select
+                    value={selectedCustomerId}
+                    onChange={(e) =>
+                      setSelectedCustomerId(
+                        e.target.value
+                      )
+                    }
+                    required
+                  >
+                    {customers.map((customer) => (
+                      <option
+                        key={customer.customer_id}
+                        value={
+                          customer.customer_id
+                        }
+                      >
+                        {customer.customer_name} (#
+                        {customer.customer_id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="invoice-field">
+                <label>
+                  Payment Due Date
+                </label>
+
+                <div className="invoice-input-wrap">
+                  <CalendarDays size={15} />
+
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) =>
+                      setDueDate(e.target.value)
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          {/* LINE ITEMS */}
+          <section className="invoice-form-card">
+
+            <div className="invoice-card-header">
+              <div className="invoice-card-title">
+                <div className="invoice-card-icon">
+                  <Package size={18} />
+                </div>
+
+                <div>
+                  <span>
+                    TRANSACTION DETAILS
+                  </span>
+                  <h2>Invoice Line Items</h2>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="add-item-button"
+                onClick={handleAddItem}
+                disabled={
+                  products.length === 0
+                }
               >
-                {customers.map(c => (
-                  <option key={c.customer_id} value={c.customer_id}>{c.customer_name} (#{c.customer_id})</option>
-                ))}
+                <Plus size={15} />
+                Add Item
+              </button>
+            </div>
+
+            <div className="invoice-items-wrapper">
+
+              <table className="create-invoice-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Available Stock</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                    <th />
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {invoiceItems.map(
+                    (item, index) => (
+                      <tr key={index}>
+
+                        <td>
+                          <select
+                            value={
+                              item.product_id
+                            }
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "product_id",
+                                e.target.value
+                              )
+                            }
+                          >
+                            {products.map(
+                              (product) => (
+                                <option
+                                  key={
+                                    product.product_id
+                                  }
+                                  value={
+                                    product.product_id
+                                  }
+                                >
+                                  {
+                                    product.product_name
+                                  }
+                                </option>
+                              )
+                            )}
+                          </select>
+                        </td>
+
+                        <td>
+                          <span
+                            className={
+                              item.stock_quantity >
+                              0
+                                ? "stock-available"
+                                : "stock-empty"
+                            }
+                          >
+                            {item.stock_quantity}
+                            <small> units</small>
+                          </span>
+                        </td>
+
+                        <td>
+                          <input
+                            type="number"
+                            min="1"
+                            max={
+                              item.stock_quantity
+                            }
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "quantity",
+                                e.target.value
+                              )
+                            }
+                            required
+                          />
+                        </td>
+
+                        <td>
+                          <span className="unit-price">
+                            ₹
+                            {Number(
+                              item.unit_price || 0
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span className="line-total">
+                            ₹
+                            {(
+                              item.unit_price *
+                              item.quantity
+                            ).toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              }
+                            )}
+                          </span>
+                        </td>
+
+                        <td>
+                          <button
+                            type="button"
+                            className="remove-item-button"
+                            onClick={() =>
+                              handleRemoveItem(
+                                index
+                              )
+                            }
+                            disabled={
+                              invoiceItems.length ===
+                              1
+                            }
+                            title="Remove item"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+
+            </div>
+
+            <div className="items-footer">
+              <span>
+                {invoiceItems.length} item
+                {invoiceItems.length !== 1
+                  ? "s"
+                  : ""}{" "}
+                added to this invoice
+              </span>
+
+              <span>
+                Inventory availability is checked
+                before submission
+              </span>
+            </div>
+
+          </section>
+
+          {/* NOTES */}
+          <section className="invoice-form-card">
+
+            <div className="invoice-card-header">
+              <div className="invoice-card-title">
+                <div className="invoice-card-icon">
+                  <FileText size={18} />
+                </div>
+
+                <div>
+                  <span>
+                    ADDITIONAL INFORMATION
+                  </span>
+                  <h2>Invoice Notes</h2>
+                </div>
+              </div>
+            </div>
+
+            <div className="invoice-field">
+              <label>Remarks</label>
+
+              <textarea
+                rows="4"
+                placeholder="Add payment terms, declarations or additional notes..."
+                value={notes}
+                onChange={(e) =>
+                  setNotes(e.target.value)
+                }
+              />
+            </div>
+
+          </section>
+
+        </div>
+
+        {/* SUMMARY COLUMN */}
+        <aside className="invoice-summary-column">
+
+          <section className="invoice-summary-card-main">
+
+            <div className="summary-header">
+              <div>
+                <span>
+                  INVOICE SUMMARY
+                </span>
+
+                <h2>Billing Overview</h2>
+              </div>
+
+              <Receipt size={20} />
+            </div>
+
+            <div className="summary-divider" />
+
+            <div className="summary-row">
+              <span>Subtotal</span>
+
+              <strong>
+                ₹
+                {subtotal.toLocaleString(
+                  "en-IN",
+                  {
+                    minimumFractionDigits: 2,
+                  }
+                )}
+              </strong>
+            </div>
+
+            <div className="summary-row">
+              <span>
+                GST
+                <small>
+                  {taxRate}%
+                </small>
+              </span>
+
+              <strong>
+                ₹
+                {taxAmount.toLocaleString(
+                  "en-IN",
+                  {
+                    minimumFractionDigits: 2,
+                  }
+                )}
+              </strong>
+            </div>
+
+            <div className="summary-control">
+              <label>GST Rate</label>
+
+              <select
+                value={taxRate}
+                onChange={(e) =>
+                  setTaxRate(
+                    Number(e.target.value)
+                  )
+                }
+              >
+                <option value="0">0%</option>
+                <option value="5">5%</option>
+                <option value="12">12%</option>
+                <option value="18">18%</option>
+                <option value="28">28%</option>
               </select>
             </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Payment Deadline (Due Date)</label>
-              <input 
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white" }}
-                required
-              />
-            </div>
-          </div>
+            <div className="summary-control">
+              <label>
+                Discount Amount
+              </label>
 
-          {/* Line Items table list */}
-          <div className="card" style={{ textAlign: "left" }}>
-            <h2 style={{ color: "#38bdf8", marginBottom: "16px" }}>Billing Line Items</h2>
-            
-            <table style={{ background: "transparent" }}>
-              <thead>
-                <tr>
-                  <th style={{ width: "45%" }}>Product Group Item</th>
-                  <th style={{ width: "15%" }}>Stock Availability</th>
-                  <th style={{ width: "15%" }}>Quantity</th>
-                  <th style={{ width: "15%" }}>Unit Cost</th>
-                  <th style={{ width: "10%" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoiceItems.map((item, index) => (
-                  <tr key={index}>
-                    <td>
-                      <select 
-                        value={item.product_id}
-                        onChange={(e) => handleItemChange(index, "product_id", e.target.value)}
-                        style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #334155", background: "#020617", color: "white" }}
-                      >
-                        {products.map(p => (
-                          <option key={p.product_id} value={p.product_id}>{p.product_name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td style={{ color: item.stock_quantity > 0 ? "#22c55e" : "#ef4444", fontWeight: "bold", verticalAlign: "middle" }}>
-                      {item.stock_quantity} units
-                    </td>
-                    <td>
-                      <input 
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-                        style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #334155", background: "#020617", color: "white" }}
-                        required
-                      />
-                    </td>
-                    <td style={{ verticalAlign: "middle", fontWeight: "bold" }}>
-                      ₹{item.unit_price.toLocaleString("en-IN")}
-                    </td>
-                    <td>
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveItem(index)}
-                        style={{ padding: "8px 12px", background: "#ef4444", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
-                        disabled={invoiceItems.length === 1}
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              <div className="summary-input">
+                <span>₹</span>
 
-            <button 
-              type="button"
-              onClick={handleAddItem}
-              style={{ marginTop: "16px", padding: "10px 16px", background: "#334155", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
-            >
-              + Add Item Row
-            </button>
-          </div>
-
-          {/* Notes Card */}
-          <div className="card" style={{ textAlign: "left" }}>
-            <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "14px" }}>Invoice Remarks / Remarks</label>
-            <textarea 
-              rows="3"
-              placeholder="Terms, bank accounts, declarations..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #334155", background: "#020617", color: "white", fontFamily: "inherit" }}
-            />
-          </div>
-        </div>
-
-        {/* Right Side: Totals calculation & Actions */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div className="card" style={{ textAlign: "left" }}>
-            <h2 style={{ color: "#38bdf8", borderBottom: "1px solid #1e293b", paddingBottom: "10px" }}>Summary</h2>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", marginTop: "16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#94a3b8" }}>Subtotal:</span>
-                <span style={{ fontWeight: "bold" }}>₹{subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-              </div>
-              
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: "#94a3b8" }}>Tax GST:</span>
-                <span style={{ fontWeight: "bold" }}>18%</span>
-              </div>
-
-              <div>
-                <label style={{ display: "block", color: "#94a3b8", marginBottom: "4px", fontSize: "12px" }}>Discount Deductions (₹)</label>
-                <input 
+                <input
                   type="number"
                   min="0"
                   value={discountAmount}
-                  onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
-                  style={{ width: "100%", padding: "6px 10px", borderRadius: "6px", border: "1px solid #334155", background: "#020617", color: "white" }}
+                  onChange={(e) =>
+                    setDiscountAmount(
+                      parseFloat(
+                        e.target.value
+                      ) || 0
+                    )
+                  }
                 />
-              </div>
-
-              <div>
-                <label style={{ display: "block", color: "#94a3b8", marginBottom: "4px", fontSize: "12px" }}>Opening Status</label>
-                <select 
-                  value={paymentStatus}
-                  onChange={(e) => setPaymentStatus(e.target.value)}
-                  style={{ width: "100%", padding: "6px 10px", borderRadius: "6px", border: "1px solid #334155", background: "#020617", color: "white" }}
-                >
-                  <option value="Unpaid">Unpaid / Outstanding</option>
-                  <option value="Paid">Fully Paid</option>
-                </select>
-              </div>
-
-              <div style={{ borderTop: "1px solid #1e293b", paddingTop: "12px", display: "flex", justifyContent: "space-between", fontSize: "18px" }}>
-                <span style={{ fontWeight: "bold", color: "#38bdf8" }}>Grand Total:</span>
-                <span style={{ fontWeight: "bold", color: "#22c55e" }}>
-                  ₹{totalAmount > 0 ? totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 }) : "0.00"}
-                </span>
               </div>
             </div>
 
-            <button 
+            <div className="summary-control">
+              <label>
+                Payment Status
+              </label>
+
+              <div className="payment-status-options">
+
+                <button
+                  type="button"
+                  className={
+                    paymentStatus === "Unpaid"
+                      ? "payment-option active unpaid"
+                      : "payment-option"
+                  }
+                  onClick={() =>
+                    setPaymentStatus(
+                      "Unpaid"
+                    )
+                  }
+                >
+                  <AlertTriangle
+                    size={14}
+                  />
+                  Unpaid
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    paymentStatus === "Paid"
+                      ? "payment-option active paid"
+                      : "payment-option"
+                  }
+                  onClick={() =>
+                    setPaymentStatus("Paid")
+                  }
+                >
+                  <CheckCircle2
+                    size={14}
+                  />
+                  Paid
+                </button>
+
+              </div>
+            </div>
+
+            <div className="summary-total">
+
+              <span>Grand Total</span>
+
+              <strong>
+                ₹
+                {totalAmount > 0
+                  ? totalAmount.toLocaleString(
+                      "en-IN",
+                      {
+                        minimumFractionDigits: 2,
+                      }
+                    )
+                  : "0.00"}
+              </strong>
+
+            </div>
+
+            <div className="summary-note">
+              <CreditCard size={14} />
+
+              <span>
+                Amount includes applicable GST and
+                deductions.
+              </span>
+            </div>
+
+            <button
               type="submit"
-              disabled={submitting || products.length === 0}
-              style={{ 
-                width: "100%", 
-                marginTop: "20px", 
-                background: "#38bdf8", 
-                color: "#020617", 
-                fontWeight: "bold", 
-                padding: "14px", 
-                borderRadius: "8px", 
-                border: "none", 
-                cursor: "pointer",
-                fontSize: "15px"
-              }}
+              className="create-invoice-button"
+              disabled={
+                submitting ||
+                products.length === 0
+              }
             >
-              {submitting ? "Writing Invoice..." : "Record & Print Invoice"}
+              {submitting ? (
+                <>
+                  <LoaderCircle
+                    size={17}
+                    className="invoice-loader"
+                  />
+                  Creating Invoice...
+                </>
+              ) : (
+                <>
+                  <FilePlus2 size={17} />
+                  Create Invoice
+                </>
+              )}
             </button>
-          </div>
-        </div>
+
+            <p className="submit-disclaimer">
+              Inventory will be updated after
+              successful invoice creation.
+            </p>
+
+          </section>
+
+        </aside>
+
       </form>
     </div>
   );

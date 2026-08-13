@@ -190,3 +190,195 @@
         grid-template-columns:1fr;
     }
 }
+
+/* =========================================
+   BUSINESS OVERVIEW - MODERN MARKETMIND UI
+========================================= */
+
+.business-overview-page {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 34px 28px 56px;
+  color: #f8fafc;
+}
+
+.business-overview-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.business-overview-header h1 {
+  margin: 8px 0 8px;
+  font-size: 38px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -1.2px;
+}
+
+.business-overview-header p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 15px;
+}
+
+.section-eyebrow {
+  display: inline-block;
+  color: #38a8ff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.overview-refresh {
+  padding: 11px 18px;
+  color: #dbeafe;
+  background: #111c2f;
+  border: 1px solid #263b5b;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.overview-refresh:hover {
+  border-color: #38a8ff;
+  background: #14243c;
+}
+
+.business-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.overview-stat-card {
+  min-width: 0;
+  min-height: 175px;
+  padding: 22px;
+  background: linear-gradient(145deg, #121d30, #0f1828);
+  border: 1px solid #263a59;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+}
+
+.stat-card-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 25px;
+}
+
+.stat-card-top span {
+  padding: 7px 10px;
+  color: #38d9a9;
+  background: rgba(16, 185, 129, 0.08);
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.overview-stat-card p {
+  margin: 0 0 8px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.overview-stat-card h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.overview-stat-card small {
+  display: block;
+  margin-top: 12px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.overview-chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr);
+  gap: 20px;
+}
+
+.overview-chart-card {
+  min-width: 0;
+  min-height: 430px;
+  padding: 24px;
+  background: linear-gradient(145deg, #111c2e, #0e1727);
+  border: 1px solid #263a59;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+}
+
+.chart-card-header h2 {
+  margin: 7px 0 5px;
+  color: #f8fafc;
+  font-size: 21px;
+  font-weight: 650;
+}
+
+.chart-card-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.overview-chart-area {
+  position: relative;
+  height: 320px;
+  margin-top: 24px;
+}
+
+.overview-empty {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+@media (max-width: 1050px) {
+  .business-overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overview-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .business-overview-page {
+    padding: 24px 16px 40px;
+  }
+
+  .business-overview-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .business-overview-header h1 {
+    font-size: 32px;
+  }
+
+  .business-overview-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-chart-card {
+    padding: 18px;
+  }
+}

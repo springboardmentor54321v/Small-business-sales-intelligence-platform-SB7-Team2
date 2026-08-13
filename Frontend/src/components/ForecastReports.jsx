@@ -1,274 +1,968 @@
 import { useState, useEffect } from "react";
+import {
+  BarChart3,
+  Boxes,
+  CircleDollarSign,
+  UsersRound,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
+  ArrowUpRight,
+  ArrowDownRight,
+  CalendarDays,
+  Database,
+  FileBarChart,
+  LoaderCircle,
+} from "lucide-react";
 import api from "../api";
+import "./ForecastReports.css";
 
 function ForecastReports() {
-  const [activeReportTab, setActiveReportTab] = useState("sales");
+  const [activeReportTab, setActiveReportTab] =
+    useState("sales");
+
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  // States
   const [salesReport, setSalesReport] = useState([]);
   const [inventoryReport, setInventoryReport] = useState([]);
-  const [customersReport, setCustomersReport] = useState([]);
-  const [revenueReport, setRevenueReport] = useState(null);
+  const [customersReport, setCustomersReport] =
+    useState([]);
+  const [revenueReport, setRevenueReport] =
+    useState(null);
 
-  const fetchReports = async () => {
+  const fetchReports = async (isRefresh = false) => {
+  if (isRefresh) {
+    setRefreshing(true);
+  } else {
     setLoading(true);
-    setError(null);
-    try {
-      const [salesRes, invRes, custRes, revRes] = await Promise.all([
-        api.get("/api/reports/sales").catch(() => ({ data: { sales: [] } })),
-        api.get("/api/reports/inventory").catch(() => ({ data: { inventory: [] } })),
-        api.get("/api/reports/customers").catch(() => ({ data: { customers: [] } })),
-        api.get("/api/reports/revenue").catch(() => ({ data: { report: null } }))
-      ]);
+  }
 
-      setSalesReport(salesRes.data.sales || []);
-      setInventoryReport(invRes.data.inventory || []);
-      setCustomersReport(custRes.data.customers || []);
-      setRevenueReport(revRes.data.report);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load business report analytics.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  setError(null);
+
+  try {
+    const [
+      salesRes,
+      invRes,
+      custRes,
+      revRes,
+    ] = await Promise.all([
+      api.get("/api/reports/sales"),
+      api.get("/api/reports/inventory"),
+      api.get("/api/reports/customers"),
+      api.get("/api/reports/revenue"),
+    ]);
+
+    console.log("REPORT SALES RESPONSE:", salesRes.data);
+    console.log("REPORT INVENTORY RESPONSE:", invRes.data);
+    console.log("REPORT CUSTOMERS RESPONSE:", custRes.data);
+    console.log("REPORT REVENUE RESPONSE:", revRes.data);
+
+    setSalesReport(
+  salesRes.data.data || []
+);
+
+setInventoryReport(
+  invRes.data.data || []
+);
+
+setCustomersReport(
+  custRes.data.data || []
+);
+
+setRevenueReport(
+  revRes.data.summary || null
+);
+
+  } catch (err) {
+    console.error("REPORT API ERROR:", err);
+    console.error("STATUS:", err.response?.status);
+    console.error("DATA:", err.response?.data);
+
+    setError(
+      err.response?.data?.message ||
+      err.formattedMessage ||
+      "Failed to load business report analytics."
+    );
+
+    setSalesReport([]);
+    setInventoryReport([]);
+    setCustomersReport([]);
+    setRevenueReport(null);
+
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+};
 
   useEffect(() => {
     fetchReports();
   }, []);
 
   if (loading) {
-    return <div className="panel"><div className="spinner"></div><p>Compiling database report ledgers...</p></div>;
+    return (
+      <div className="reports-loading">
+        <LoaderCircle
+          size={28}
+          className="reports-spinner"
+        />
+
+        <span>
+          Compiling business report analytics...
+        </span>
+      </div>
+    );
   }
 
-  return (
-    <div className="panel">
-      <h1>📊 Business Reporting Suite</h1>
-      <p className="page-desc">
-        Access audit logs, revenue statistics, and live stock audits directly from the PostgreSQL data storage.
-      </p>
+  const paidSales = salesReport.filter(
+    (sale) =>
+      sale.payment_status === "Paid"
+  ).length;
 
-      {/* Report tabs navigation */}
-      <div style={{ display: "flex", gap: "10px", margin: "20px 0", borderBottom: "1px solid #1e293b", paddingBottom: "10px" }}>
-        <button 
-          onClick={() => setActiveReportTab("sales")}
-          style={{ padding: "10px 20px", background: activeReportTab === "sales" ? "#38bdf8" : "transparent", color: activeReportTab === "sales" ? "#020617" : "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
+  const pendingSales =
+    salesReport.length - paidSales;
+
+  const lowStockItems =
+    inventoryReport.filter(
+      (item) =>
+        Number(item.stock_quantity) <=
+        Number(item.reorder_level)
+    ).length;
+
+  const totalStockUnits =
+    inventoryReport.reduce(
+      (sum, item) =>
+        sum +
+        Number(item.stock_quantity || 0),
+      0
+    );
+
+  const reportTabs = [
+    {
+      id: "sales",
+      label: "Sales Ledger",
+      icon: BarChart3,
+      count: salesReport.length,
+    },
+    {
+      id: "inventory",
+      label: "Inventory Audits",
+      icon: Boxes,
+      count: inventoryReport.length,
+    },
+    {
+      id: "revenue",
+      label: "Revenue Analytics",
+      icon: CircleDollarSign,
+      count: revenueReport ? 1 : 0,
+    },
+    {
+      id: "customers",
+      label: "Client Directory",
+      icon: UsersRound,
+      count: customersReport.length,
+    },
+  ];
+
+  return (
+    <div className="reports-page">
+
+      {/* HEADER */}
+
+      <section className="reports-header">
+
+        <div>
+          <span className="reports-eyebrow">
+            BUSINESS INTELLIGENCE
+          </span>
+
+          <h1>Analytics & Reports</h1>
+
+          <p>
+            Review sales activity, inventory health,
+            revenue performance and customer records
+            from the business database.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="reports-refresh-button"
+          onClick={() => fetchReports(true)}
+          disabled={refreshing}
         >
-          📈 Sales Ledger
+          <RefreshCw
+            size={15}
+            className={
+              refreshing
+                ? "reports-spinner"
+                : ""
+            }
+          />
+
+          {refreshing
+            ? "Refreshing..."
+            : "Refresh Reports"}
         </button>
-        <button 
-          onClick={() => setActiveReportTab("inventory")}
-          style={{ padding: "10px 20px", background: activeReportTab === "inventory" ? "#38bdf8" : "transparent", color: activeReportTab === "inventory" ? "#020617" : "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
-        >
-          📦 Inventory Audits
-        </button>
-        <button 
-          onClick={() => setActiveReportTab("revenue")}
-          style={{ padding: "10px 20px", background: activeReportTab === "revenue" ? "#38bdf8" : "transparent", color: activeReportTab === "revenue" ? "#020617" : "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
-        >
-          💰 Revenue Statistics
-        </button>
-        <button 
-          onClick={() => setActiveReportTab("customers")}
-          style={{ padding: "10px 20px", background: activeReportTab === "customers" ? "#38bdf8" : "transparent", color: activeReportTab === "customers" ? "#020617" : "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
-        >
-          👥 Client Directory
-        </button>
+
+      </section>
+
+      {/* OVERVIEW CARDS */}
+
+      <section className="reports-overview-grid">
+
+        <div className="reports-overview-card">
+
+          <div className="reports-overview-icon blue">
+            <BarChart3 size={19} />
+          </div>
+
+          <div>
+            <span>Total Sales Records</span>
+
+            <strong>
+              {salesReport.length}
+            </strong>
+
+            <small>
+              {paidSales} successfully paid
+            </small>
+          </div>
+
+        </div>
+
+        <div className="reports-overview-card">
+
+          <div className="reports-overview-icon green">
+            <Boxes size={19} />
+          </div>
+
+          <div>
+            <span>Stock Units</span>
+
+            <strong>
+              {totalStockUnits.toLocaleString(
+                "en-IN"
+              )}
+            </strong>
+
+            <small>
+              {inventoryReport.length} products
+              tracked
+            </small>
+          </div>
+
+        </div>
+
+        <div className="reports-overview-card">
+
+          <div className="reports-overview-icon amber">
+            <AlertTriangle size={19} />
+          </div>
+
+          <div>
+            <span>Low Stock Items</span>
+
+            <strong>
+              {lowStockItems}
+            </strong>
+
+            <small>
+              Require inventory attention
+            </small>
+          </div>
+
+        </div>
+
+        <div className="reports-overview-card">
+
+          <div className="reports-overview-icon purple">
+            <UsersRound size={19} />
+          </div>
+
+          <div>
+            <span>Customer Records</span>
+
+            <strong>
+              {customersReport.length}
+            </strong>
+
+            <small>
+              Registered customers
+            </small>
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* ERROR */}
+
+      {error && (
+        <div className="reports-error">
+          <AlertTriangle size={16} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* REPORT WORKSPACE */}
+
+      <section className="reports-workspace">
+
+        <div className="reports-workspace-header">
+
+          <div>
+            <span className="reports-section-label">
+              REPORT CENTER
+            </span>
+
+            <h2>Business Reports</h2>
+
+            <p>
+              Select a report category to inspect
+              detailed records.
+            </p>
+          </div>
+
+          <div className="reports-source">
+            <Database size={13} />
+            PostgreSQL Data
+          </div>
+
+        </div>
+
+        {/* TABS */}
+
+        <div className="reports-tabs">
+
+          {reportTabs.map((tab) => {
+            const Icon = tab.icon;
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                className={
+                  activeReportTab === tab.id
+                    ? "reports-tab active"
+                    : "reports-tab"
+                }
+                onClick={() =>
+                  setActiveReportTab(tab.id)
+                }
+              >
+                <Icon size={15} />
+
+                <span>{tab.label}</span>
+
+                <small>{tab.count}</small>
+              </button>
+            );
+          })}
+
+        </div>
+
+        {/* CONTENT */}
+
+        <div className="reports-content">
+
+          {/* SALES */}
+
+          {activeReportTab === "sales" && (
+            <div className="report-panel">
+
+              <div className="report-panel-header">
+
+                <div>
+                  <span>
+                    TRANSACTION AUDIT
+                  </span>
+
+                  <h3>Sales Ledger</h3>
+
+                  <p>
+                    Complete record of recorded
+                    sales transactions.
+                  </p>
+                </div>
+
+                <div className="report-record-count">
+                  {salesReport.length} RECORDS
+                </div>
+
+              </div>
+
+              {salesReport.length > 0 ? (
+                <div className="reports-table-wrapper">
+
+                  <table className="reports-table">
+
+                    <thead>
+                      <tr>
+                        <th>Sale ID</th>
+                        <th>Invoice</th>
+                        <th>Customer</th>
+                        <th>Payment Method</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                        <th>Sale Date</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {salesReport.map((sale) => (
+                        <tr key={sale.sale_id}>
+
+                          <td>
+                            <span className="record-id">
+                              #{sale.sale_id}
+                            </span>
+                          </td>
+
+                          <td>
+                            <strong className="invoice-reference">
+                              {sale.invoice_no}
+                            </strong>
+                          </td>
+
+                          <td>
+                            {sale.customer_name}
+                          </td>
+
+                          <td>
+                            <span className="method-label">
+                              {sale.payment_method}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span
+                              className={
+                                sale.payment_status ===
+                                "Paid"
+                                  ? "report-status paid"
+                                  : "report-status pending"
+                              }
+                            >
+                              {sale.payment_status ===
+                              "Paid" ? (
+                                <CheckCircle2
+                                  size={12}
+                                />
+                              ) : (
+                                <AlertTriangle
+                                  size={12}
+                                />
+                              )}
+
+                              {sale.payment_status}
+                            </span>
+                          </td>
+
+                          <td>
+                            <strong>
+                              ₹
+                              {Number(
+                                sale.total_amount || 0
+                              ).toLocaleString(
+                                "en-IN"
+                              )}
+                            </strong>
+                          </td>
+
+                          <td>
+                            <span className="report-date">
+                              <CalendarDays
+                                size={12}
+                              />
+                              {sale.sale_date}
+                            </span>
+                          </td>
+
+                        </tr>
+                      ))}
+                    </tbody>
+
+                  </table>
+
+                </div>
+              ) : (
+                <EmptyReport
+                  message="No sales transactions found."
+                />
+              )}
+
+            </div>
+          )}
+
+          {/* INVENTORY */}
+
+          {activeReportTab === "inventory" && (
+            <div className="report-panel">
+
+              <div className="report-panel-header">
+
+                <div>
+                  <span>
+                    INVENTORY AUDIT
+                  </span>
+
+                  <h3>Warehouse Stock</h3>
+
+                  <p>
+                    Current stock availability and
+                    reorder thresholds.
+                  </p>
+                </div>
+
+                <div className="report-record-count">
+                  {inventoryReport.length} ITEMS
+                </div>
+
+              </div>
+
+              {inventoryReport.length > 0 ? (
+                <div className="reports-table-wrapper">
+
+                  <table className="reports-table">
+
+                    <thead>
+                      <tr>
+                        <th>SKU</th>
+                        <th>Product</th>
+                        <th>Warehouse</th>
+                        <th>Available</th>
+                        <th>Threshold</th>
+                        <th>Stock Health</th>
+                        <th>Last Updated</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {inventoryReport.map(
+                        (item) => {
+                          const isLow =
+                            Number(
+                              item.stock_quantity
+                            ) <=
+                            Number(
+                              item.reorder_level
+                            );
+
+                          return (
+                            <tr
+                              key={
+                                item.inventory_id
+                              }
+                            >
+
+                              <td>
+                                <span className="record-id">
+                                  SKU-
+                                  {String(
+                                    item.inventory_id
+                                  ).padStart(
+                                    5,
+                                    "0"
+                                  )}
+                                </span>
+                              </td>
+
+                              <td>
+                                <strong>
+                                  {
+                                    item.product_name
+                                  }
+                                </strong>
+                              </td>
+
+                              <td>
+                                {item.warehouse_location ||
+                                  "Awaiting placement"}
+                              </td>
+
+                              <td>
+                                <strong
+                                  className={
+                                    isLow
+                                      ? "stock-low"
+                                      : "stock-good"
+                                  }
+                                >
+                                  {
+                                    item.stock_quantity
+                                  }{" "}
+                                  units
+                                </strong>
+                              </td>
+
+                              <td>
+                                {
+                                  item.reorder_level
+                                }{" "}
+                                units
+                              </td>
+
+                              <td>
+                                <span
+                                  className={
+                                    isLow
+                                      ? "stock-health low"
+                                      : "stock-health good"
+                                  }
+                                >
+                                  <span />
+
+                                  {isLow
+                                    ? "REORDER"
+                                    : "HEALTHY"}
+                                </span>
+                              </td>
+
+                              <td>
+                                <span className="report-date">
+                                  <CalendarDays
+                                    size={12}
+                                  />
+
+                                  {
+                                    item.last_updated
+                                  }
+                                </span>
+                              </td>
+
+                            </tr>
+                          );
+                        }
+                      )}
+                    </tbody>
+
+                  </table>
+
+                </div>
+              ) : (
+                <EmptyReport
+                  message="No inventory records found."
+                />
+              )}
+
+            </div>
+          )}
+
+          {/* REVENUE */}
+
+          {activeReportTab === "revenue" && (
+            <div className="report-panel">
+
+              <div className="report-panel-header">
+
+                <div>
+                  <span>
+                    FINANCIAL PERFORMANCE
+                  </span>
+
+                  <h3>Revenue Analytics</h3>
+
+                  <p>
+                    Aggregated revenue and
+                    transaction-size statistics.
+                  </p>
+                </div>
+
+                <div className="report-record-count">
+                  LIVE DATA
+                </div>
+
+              </div>
+
+              {revenueReport ? (
+                <>
+
+                  <div className="revenue-metrics">
+
+                    <RevenueMetric
+                      label="Total Revenue"
+                      value={
+                        revenueReport.totalRevenue
+                      }
+                      caption="Overall gross revenue"
+                      primary
+                    />
+
+                    <RevenueMetric
+                    label="Average Payment"
+                    value={revenueReport.averagePayment}
+                    caption="Mean payment value"
+                    />
+
+                    <RevenueMetric
+                    label="Highest Payment"
+                    value={revenueReport.highestPayment}
+                    caption="Maximum recorded payment"
+                    positive
+                    />
+
+                    <RevenueMetric
+                    label="Lowest Payment"
+                    value={revenueReport.lowestPayment}
+                    caption="Minimum recorded payment"
+                    />
+
+                  </div>
+
+                  <div className="revenue-spread">
+
+                    <div className="spread-header">
+                      <div>
+                        <span>
+                          TRANSACTION DISTRIBUTION
+                        </span>
+
+                        <h3>
+                          Checkout Spread
+                        </h3>
+                      </div>
+
+                      <FileBarChart
+                        size={19}
+                      />
+                    </div>
+
+                    <div className="spread-track">
+
+                      <div className="spread-point">
+                        <span>Minimum</span>
+
+                        <strong>
+                          ₹
+                          {Number(
+                            revenueReport.lowestPayment ||
+                              0
+                          ).toLocaleString(
+                            "en-IN"
+                          )}
+                        </strong>
+                      </div>
+
+                      <div className="spread-line">
+                        <ArrowUpRight
+                          size={16}
+                        />
+                      </div>
+
+                      <div className="spread-point center">
+                        <span>Average</span>
+
+                        <strong>
+                          ₹
+                          {Math.round(
+                            Number(
+                              revenueReport.averagePayment||
+                                0
+                            )
+                          ).toLocaleString(
+                            "en-IN"
+                          )}
+                        </strong>
+                      </div>
+
+                      <div className="spread-line">
+                        <ArrowUpRight
+                          size={16}
+                        />
+                      </div>
+
+                      <div className="spread-point">
+                        <span>Maximum</span>
+
+                        <strong>
+                          ₹
+                          {Number(
+                            revenueReport.highestPayment ||
+                              0
+                          ).toLocaleString(
+                            "en-IN"
+                          )}
+                        </strong>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </>
+              ) : (
+                <EmptyReport
+                  message="Revenue analytics are not available."
+                />
+              )}
+
+            </div>
+          )}
+
+          {/* CUSTOMERS */}
+
+          {activeReportTab === "customers" && (
+            <div className="report-panel">
+
+              <div className="report-panel-header">
+
+                <div>
+                  <span>
+                    CUSTOMER DATABASE
+                  </span>
+
+                  <h3>Client Directory</h3>
+
+                  <p>
+                    Registered customer records and
+                    account information.
+                  </p>
+                </div>
+
+                <div className="report-record-count">
+                  {customersReport.length} CLIENTS
+                </div>
+
+              </div>
+
+              {customersReport.length > 0 ? (
+                <div className="reports-table-wrapper">
+
+                  <table className="reports-table">
+
+                    <thead>
+                      <tr>
+                        <th>Client ID</th>
+                        <th>Customer</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Registered</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {customersReport.map(
+                        (customer) => (
+                          <tr
+                            key={
+                              customer.customer_id
+                            }
+                          >
+
+                            <td>
+                              <span className="record-id">
+                                #
+                                {
+                                  customer.customer_id
+                                }
+                              </span>
+                            </td>
+
+                            <td>
+                              <strong>
+                                {
+                                  customer.customer_name
+                                }
+                              </strong>
+                            </td>
+
+                            <td>
+                              {customer.email ||
+                                "N/A"}
+                            </td>
+
+                            <td>
+                              {customer.phone ||
+                                "N/A"}
+                            </td>
+
+                            <td className="address-cell">
+                              {customer.address ||
+                                "N/A"}
+                            </td>
+
+                            <td>
+                              <span className="report-date">
+                                <CalendarDays
+                                  size={12}
+                                />
+
+                                {
+                                  customer.created_at
+                                }
+                              </span>
+                            </td>
+
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+
+                  </table>
+
+                </div>
+              ) : (
+                <EmptyReport
+                  message="No customer records found."
+                />
+              )}
+
+            </div>
+          )}
+
+        </div>
+
+      </section>
+
+    </div>
+  );
+}
+
+function RevenueMetric({
+  label,
+  value,
+  caption,
+  primary,
+  positive,
+}) {
+  return (
+    <div
+      className={
+        primary
+          ? "revenue-metric primary"
+          : positive
+          ? "revenue-metric positive"
+          : "revenue-metric"
+      }
+    >
+      <span>{label}</span>
+
+      <strong>
+        ₹
+        {Number(value || 0).toLocaleString(
+          "en-IN"
+        )}
+      </strong>
+
+      <small>{caption}</small>
+    </div>
+  );
+}
+
+function EmptyReport({ message }) {
+  return (
+    <div className="report-empty">
+      <div className="report-empty-icon">
+        <Database size={22} />
       </div>
 
-      {error && <div style={{ color: "#ef4444", marginBottom: "20px" }}>{error}</div>}
+      <h3>No Data Available</h3>
 
-      {/* ==========================================
-          TAB: SALES REPORT
-          ========================================== */}
-      {activeReportTab === "sales" && (
-        <div className="card">
-          <h2>Sales Transactions Audit</h2>
-          {salesReport.length > 0 ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>Sale ID</th>
-                  <th>Invoice No</th>
-                  <th>Client Customer</th>
-                  <th>Method</th>
-                  <th>Status</th>
-                  <th>Billed Amount</th>
-                  <th>Sale Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {salesReport.map(s => (
-                  <tr key={s.sale_id}>
-                    <td>#{s.sale_id}</td>
-                    <td style={{ fontWeight: "bold", color: "#38bdf8" }}>{s.invoice_no}</td>
-                    <td>{s.customer_name}</td>
-                    <td>{s.payment_method}</td>
-                    <td>
-                      <span style={{ 
-                        padding: "2px 8px", 
-                        borderRadius: "10px", 
-                        fontSize: "11px", 
-                        fontWeight: "bold",
-                        background: s.payment_status === "Paid" ? "rgba(34,197,94,0.15)" : "rgba(245,158,11,0.15)",
-                        color: s.payment_status === "Paid" ? "#22c55e" : "#f59e0b"
-                      }}>
-                        {s.payment_status}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: "bold" }}>₹{s.total_amount.toLocaleString("en-IN")}</td>
-                    <td>{s.sale_date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p style={{ color: "#64748b" }}>No sales transactions found in the database.</p>
-          )}
-        </div>
-      )}
-
-      {/* ==========================================
-          TAB: INVENTORY REPORT
-          ========================================== */}
-      {activeReportTab === "inventory" && (
-        <div className="card">
-          <h2>Warehouse Stock Audits</h2>
-          {inventoryReport.length > 0 ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>SKU ID</th>
-                  <th>Product Description</th>
-                  <th>Warehouse Placement</th>
-                  <th>Available Quantity</th>
-                  <th>Safety Threshold</th>
-                  <th>Last Inspected</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inventoryReport.map(item => (
-                  <tr key={item.inventory_id}>
-                    <td>SKU-{String(item.inventory_id).padStart(5, "0")}</td>
-                    <td style={{ fontWeight: "bold" }}>{item.product_name}</td>
-                    <td>{item.warehouse_location || "Awaiting shelf placement"}</td>
-                    <td style={{ fontWeight: "bold", color: item.stock_quantity <= item.reorder_level ? "#ef4444" : "#22c55e" }}>
-                      {item.stock_quantity} units
-                    </td>
-                    <td>{item.reorder_level} units</td>
-                    <td>{item.last_updated}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p style={{ color: "#64748b" }}>No stock items registered in database inventory.</p>
-          )}
-        </div>
-      )}
-
-      {/* ==========================================
-          TAB: REVENUE STATISTICS
-          ========================================== */}
-      {activeReportTab === "revenue" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {revenueReport ? (
-            <>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
-                <div className="card">
-                  <h3 style={{ fontSize: "14px", color: "#64748b" }}>AGGREGATED SALES REVENUE</h3>
-                  <h2 style={{ color: "#38bdf8", fontSize: "32px", margin: "10px 0" }}>
-                    ₹{revenueReport.totalRevenue.toLocaleString("en-IN")}
-                  </h2>
-                  <p style={{ fontSize: "12px", color: "#94a3b8" }}>Store overall ledger gross</p>
-                </div>
-                <div className="card">
-                  <h3 style={{ fontSize: "14px", color: "#64748b" }}>MEAN TRANSACTION SIZE</h3>
-                  <h2 style={{ color: "#38bdf8", fontSize: "32px", margin: "10px 0" }}>
-                    ₹{Math.round(revenueReport.averageSale).toLocaleString("en-IN")}
-                  </h2>
-                  <p style={{ fontSize: "12px", color: "#94a3b8" }}>Average cart checkout size</p>
-                </div>
-                <div className="card" style={{ borderLeft: "4px solid #22c55e" }}>
-                  <h3 style={{ fontSize: "14px", color: "#64748b" }}>HIGHEST CHECKOUT VALUE</h3>
-                  <h2 style={{ color: "#22c55e", fontSize: "32px", margin: "10px 0" }}>
-                    ₹{revenueReport.highestSale.toLocaleString("en-IN")}
-                  </h2>
-                  <p style={{ fontSize: "12px", color: "#94a3b8" }}>Max order logged</p>
-                </div>
-                <div className="card">
-                  <h3 style={{ fontSize: "14px", color: "#64748b" }}>SMALLEST CHECKOUT VALUE</h3>
-                  <h2 style={{ color: "#38bdf8", fontSize: "32px", margin: "10px 0" }}>
-                    ₹{revenueReport.lowestSale.toLocaleString("en-IN")}
-                  </h2>
-                  <p style={{ fontSize: "12px", color: "#94a3b8" }}>Min order logged</p>
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: "30px", textAlign: "center" }}>
-                <h2>Checkout Spread Analysis</h2>
-                <div style={{ display: "flex", justifyContent: "space-around", marginTop: "30px", flexWrap: "wrap", gap: "20px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <span style={{ fontSize: "14px", color: "#94a3b8" }}>Minimum Sale</span>
-                    <strong style={{ fontSize: "20px" }}>₹{revenueReport.lowestSale}</strong>
-                  </div>
-                  <div style={{ fontSize: "24px", color: "#334155" }}>➔</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <span style={{ fontSize: "14px", color: "#94a3b8" }}>Average Cart size</span>
-                    <strong style={{ fontSize: "20px", color: "#38bdf8" }}>₹{Math.round(revenueReport.averageSale)}</strong>
-                  </div>
-                  <div style={{ fontSize: "24px", color: "#334155" }}>➔</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <span style={{ fontSize: "14px", color: "#94a3b8" }}>Maximum Sale</span>
-                    <strong style={{ fontSize: "20px", color: "#22c55e" }}>₹{revenueReport.highestSale}</strong>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <p style={{ color: "#64748b" }}>Awaiting revenue transactions compilation records.</p>
-          )}
-        </div>
-      )}
-
-      {/* ==========================================
-          TAB: CLIENT DIRECTORY
-          ========================================== */}
-      {activeReportTab === "customers" && (
-        <div className="card">
-          <h2>Client Database Logs</h2>
-          {customersReport.length > 0 ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>Client ID</th>
-                  <th>Customer Name</th>
-                  <th>Email Address</th>
-                  <th>Phone Number</th>
-                  <th>Home / Shipping Address</th>
-                  <th>Registration Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customersReport.map(c => (
-                  <tr key={c.customer_id}>
-                    <td>#{c.customer_id}</td>
-                    <td style={{ fontWeight: "bold" }}>{c.customer_name}</td>
-                    <td>{c.email || "N/A"}</td>
-                    <td>{c.phone || "N/A"}</td>
-                    <td>{c.address || "N/A"}</td>
-                    <td>{c.created_at}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p style={{ color: "#64748b" }}>No customer records found in PostgreSQL.</p>
-          )}
-        </div>
-      )}
+      <p>{message}</p>
     </div>
   );
 }
