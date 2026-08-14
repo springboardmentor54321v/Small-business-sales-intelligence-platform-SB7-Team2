@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { aiApi } from "../api";
 
 function AnomalyAlerts() {
   const [alerts, setAlerts] = useState([]);
@@ -11,9 +11,9 @@ function AnomalyAlerts() {
 
   const fetchAnomaly = async () => {
     try {
-      const res = await axios.get(
-        "http://127.0.0.1:8000/anomaly/CA-2016-152156"
-      );
+      const res = await aiApi.get(
+          "/anomaly/CA-2016-152156"
+        );
 
       if (Array.isArray(res.data)) {
         setAlerts(res.data);
