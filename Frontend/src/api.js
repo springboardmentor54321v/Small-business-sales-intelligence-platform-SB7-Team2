@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Node.js Backend API
 const api = axios.create({
-  baseURL: "",
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -10,7 +10,7 @@ const api = axios.create({
 
 // FastAPI AI API
 const aiApi = axios.create({
-  baseURL: "",
+  baseURL: import.meta.env.VITE_AI_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -64,5 +64,5 @@ aiApi.interceptors.response.use(
   }
 );
 
-export { aiApi };
 export default api;
+export { aiApi };
