@@ -8,6 +8,8 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 5173
+RUN npm run build
 
-CMD ["npm", "run", "dev", "--", "--host"]
+EXPOSE 10000
+
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "10000"]
