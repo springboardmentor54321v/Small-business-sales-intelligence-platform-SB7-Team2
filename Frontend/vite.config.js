@@ -13,7 +13,6 @@ export default defineConfig({
 
         configure: (proxy) => {
           proxy.on("proxyReq", (proxyReq) => {
-            // Backend works without the browser's Codespaces Origin header.
             proxyReq.removeHeader("origin");
           });
         },
@@ -55,6 +54,12 @@ export default defineConfig({
         },
       },
     },
+  },
+
+  preview: {
+    host: "0.0.0.0",
+    port: 10000,
+    allowedHosts: ["marketmind-frontend-sl1d.onrender.com"],
   },
 
   test: {
