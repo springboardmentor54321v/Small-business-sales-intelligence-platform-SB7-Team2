@@ -30,27 +30,27 @@ router.use(protect);
 // Payment Routes with RBAC and Joi Validation
 router.post(
   "/",
-  authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
+  authorizeRoles("Business Owner", "Sales Executive","Store Manager", "System Administrator"),
   validateBody(createPaymentSchema),
   createPayment
 );
 
 router.get(
   "/",
-  authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
+  authorizeRoles("Business Owner", "Sales Executive","Store Manager", "System Administrator"),
   getPayments
 );
 
 router.get(
   "/:id",
-  authorizeRoles("Business Owner", "Sales Executive", "System Administrator"),
+  authorizeRoles("Business Owner", "Sales Executive","Store Manager", "System Administrator"),
   validateParams(idParamSchema),
   getPaymentById
 );
 
 router.put(
   "/:id",
-  authorizeRoles("Business Owner", "System Administrator"),
+  authorizeRoles("Business Owner","Store Manager", "System Administrator"),
   validateParams(idParamSchema),
   validateBody(updatePaymentSchema),
   updatePayment
