@@ -15,7 +15,6 @@ import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
   BarChart3,
-  CalendarDays,
   Package,
   RefreshCw,
   TrendingUp,
@@ -39,34 +38,35 @@ ChartJS.register(
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState("This Month");
   const [category, setCategory] = useState("All");
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   const fetchDashboard = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-      const response = await api.get("/api/dashboard", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
+    const response = await api.get("/api/dashboard", {
+      params: {
+        category: category,
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      setDashboardData(response.data.dashboard);
-    } catch (error) {
-      console.error("Dashboard API Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setDashboardData(response.data.dashboard);
+  } catch (error) {
+    console.error("Dashboard API Error:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
-    fetchDashboard();
-  }, []);
+  fetchDashboard();
+}, [category]);
 
   if (loading) {
     return (
@@ -342,30 +342,15 @@ function Dashboard() {
       </div>
 
 
-      {/* FILTER BAR */}
+      {/* CATEGORY FILTER */}
 
       <div className="dashboard-toolbar">
 
         <div className="dashboard-toolbar-label">
-
-          <CalendarDays size={15} />
-
-          Reporting period
-
+          Product Category
         </div>
 
         <div className="dashboard-filters">
-
-          <select
-            value={dateRange}
-            onChange={(e) =>
-              setDateRange(e.target.value)
-            }
-          >
-            <option>This Week</option>
-            <option>This Month</option>
-            <option>This Year</option>
-          </select>
 
           <select
             value={category}
@@ -414,7 +399,6 @@ function Dashboard() {
           </div>
 
           <div className="dashboard-kpi-footer">
-            Current reporting period
           </div>
 
         </div>
