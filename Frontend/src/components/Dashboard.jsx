@@ -342,34 +342,6 @@ function Dashboard() {
       </div>
 
 
-      {/* CATEGORY FILTER */}
-
-      <div className="dashboard-toolbar">
-
-        <div className="dashboard-toolbar-label">
-          Product Category
-        </div>
-
-        <div className="dashboard-filters">
-
-          <select
-            value={category}
-            onChange={(e) =>
-              setCategory(e.target.value)
-            }
-          >
-            <option>All</option>
-            <option>Electronics</option>
-            <option>Furniture</option>
-            <option>Groceries</option>
-            <option>Clothing</option>
-          </select>
-
-        </div>
-
-      </div>
-
-
       {/* KPI CARDS */}
 
       <section className="dashboard-kpis">
