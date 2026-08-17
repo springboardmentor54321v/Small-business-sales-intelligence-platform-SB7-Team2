@@ -1,0 +1,33 @@
+# Milestone 4 – Final Documentation
+
+## Project
+
+MarketMind AI – Small Business Sales Intelligence Platform
+
+## Completed Work
+
+* Frontend deployed successfully
+* Backend API deployed successfully
+* PostgreSQL database connected
+* AIML Sales Prediction API deployed
+* Docker integration completed
+* Frontend, Backend and AIML integration tested
+* Database backup completed
+* Final application tested successfully
+
+## Live URLs
+
+Frontend:
+https://marketmind-ai-5m5w.onrender.com/
+
+Backend:
+https://marketmind-backend-zrdw.onrender.com
+
+AIML API:
+https://marketmind-ai-gd3n.onrender.com
+
+## Final Status
+
+Milestone 4 – COMPLETED ✅
+
+The MarketMind AI application was successfully deployed, integrated and tested.
