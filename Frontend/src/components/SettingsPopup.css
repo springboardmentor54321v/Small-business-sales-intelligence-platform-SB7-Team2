@@ -1,41 +1,253 @@
-/* Change Password */
+/* ================================
+   SETTINGS OVERLAY
+================================ */
 
-.change-password-button {
-  width: 100%;
-  margin-top: 18px;
-  padding: 16px 18px;
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
 
   display: flex;
   align-items: center;
+  justify-content: center;
+
+  background: rgba(2, 8, 20, 0.78);
+  backdrop-filter: blur(8px);
+
+  z-index: 9999;
+
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+
+/* ================================
+   SETTINGS MODAL
+================================ */
+
+.settings-modal {
+  position: relative;
+
+  width: min(700px, 100%);
+  max-height: 90vh;
+
+  overflow-y: auto;
+
+  background: #07101f;
+  border: 1px solid #1c3048;
+  border-radius: 24px;
+
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.55),
+    0 0 40px rgba(0, 180, 255, 0.08);
+
+  color: #f5f7fa;
+}
+
+
+/* Scrollbar */
+
+.settings-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-modal::-webkit-scrollbar-thumb {
+  background: #263b55;
+  border-radius: 10px;
+}
+
+
+/* ================================
+   HEADER
+================================ */
+
+.settings-modal-header {
+  display: flex;
   justify-content: space-between;
+  align-items: flex-start;
 
-  border: 1px solid rgba(56, 189, 248, 0.18);
-  border-radius: 12px;
+  padding: 30px 34px;
 
-  background: rgba(15, 30, 48, 0.7);
-  color: #e5eef8;
+  border-bottom: 1px solid #17283d;
+}
+
+.settings-eyebrow {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #27c7ff;
+
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.settings-modal-header h2 {
+  margin: 0;
+
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.settings-modal-header p {
+  margin: 8px 0 0;
+
+  color: #71839a;
 
   font-size: 14px;
-  font-weight: 600;
+}
+
+
+/* ================================
+   CLOSE BUTTON
+================================ */
+
+.settings-close {
+  width: 42px;
+  height: 42px;
+
+  border: 1px solid #243951;
+  border-radius: 12px;
+
+  background: #0b1728;
+  color: #9fb0c3;
+
+  font-size: 26px;
 
   cursor: pointer;
-  transition: all 0.2s ease;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: 0.2s ease;
 }
 
-.change-password-button:hover {
-  border-color: #38bdf8;
-  background: rgba(14, 116, 144, 0.18);
-  transform: translateY(-1px);
+.settings-close:hover {
+  color: #fff;
+  border-color: #27c7ff;
+  background: #102238;
 }
 
-.change-password-form {
+
+/* ================================
+   SECTIONS
+================================ */
+
+.settings-section {
+  padding: 26px 34px;
+
+  border-bottom: 1px solid #17283d;
+}
+
+.settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.settings-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: #0d2236;
+  color: #27c7ff;
+
+  font-size: 18px;
+}
+
+.settings-section-title h3 {
+  margin: 0;
+
+  font-size: 16px;
+}
+
+.settings-section-title p {
+  margin: 5px 0 0;
+
+  color: #71839a;
+
+  font-size: 13px;
+}
+
+
+/* ================================
+   PROFILE
+================================ */
+
+.settings-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
   margin-top: 20px;
+
   padding: 18px;
 
-  border: 1px solid rgba(56, 189, 248, 0.18);
+  border: 1px solid #1b3048;
+  border-radius: 16px;
+
+  background: #0b1728;
+}
+
+.settings-avatar {
+  width: 48px;
+  height: 48px;
+
   border-radius: 14px;
 
-  background: rgba(7, 18, 32, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #102d45;
+  color: #27c7ff;
+
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.settings-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.settings-profile-info strong {
+  font-size: 15px;
+}
+
+.settings-profile-info span {
+  color: #71839a;
+  font-size: 13px;
+}
+
+
+/* ================================
+   CHANGE PASSWORD
+================================ */
+
+.change-password-form {
+  margin-top: 22px;
+
+  padding: 20px;
+
+  border: 1px solid #1b3048;
+  border-radius: 16px;
+
+  background: #0a1626;
 }
 
 .password-field {
@@ -44,103 +256,338 @@
 
 .password-field label {
   display: block;
-  margin-bottom: 7px;
 
-  color: #aebdce;
+  margin-bottom: 8px;
+
+  color: #aebdd0;
+
   font-size: 13px;
   font-weight: 600;
 }
 
 .password-field input {
   width: 100%;
+
   box-sizing: border-box;
 
-  padding: 12px 14px;
+  padding: 13px 14px;
 
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 9px;
+  border: 1px solid #263b55;
+  border-radius: 10px;
 
-  background: #101d2e;
-  color: #f8fafc;
+  background: #101f32;
+  color: #fff;
 
-  outline: none;
   font-size: 14px;
 
-  transition: border-color 0.2s ease,
-              box-shadow 0.2s ease;
-}
+  outline: none;
 
-.password-field input::placeholder {
-  color: #64748b;
+  transition: 0.2s ease;
 }
 
 .password-field input:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+  border-color: #27c7ff;
+
+  box-shadow:
+    0 0 0 3px rgba(39, 199, 255, 0.08);
 }
 
-.password-message {
-  padding: 11px 13px;
-  margin-bottom: 15px;
-
-  border-radius: 8px;
-  font-size: 13px;
+.password-field input::placeholder {
+  color: #61748b;
 }
 
-.password-message.error {
-  color: #fca5a5;
-  background: rgba(127, 29, 29, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-}
 
-.password-message.success {
-  color: #86efac;
-  background: rgba(20, 83, 45, 0.2);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-}
+/* Update Password button */
 
-.password-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 8px;
-}
+.change-password-button {
+  width: 100%;
 
-.password-cancel,
-.password-update {
-  padding: 10px 16px;
+  margin-top: 6px;
 
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
+  padding: 13px 18px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #27b8ed;
+  color: #04101c;
+
+  font-size: 14px;
+  font-weight: 700;
 
   cursor: pointer;
-  transition: all 0.2s ease;
+
+  transition: 0.2s ease;
 }
 
-.password-cancel {
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: transparent;
-  color: #94a3b8;
+.change-password-button:hover {
+  background: #45c9f5;
+  transform: translateY(-1px);
 }
 
-.password-cancel:hover {
-  color: #e2e8f0;
-  border-color: rgba(148, 163, 184, 0.4);
-}
-
-.password-update {
-  border: none;
-  background: #38bdf8;
-  color: #06111f;
-}
-
-.password-update:hover {
-  background: #22d3ee;
-}
-
-.password-update:disabled,
-.password-cancel:disabled {
+.change-password-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+}
+
+
+/* Success / error */
+
+.password-success {
+  margin-top: 12px;
+
+  padding: 10px 12px;
+
+  border-radius: 8px;
+
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+
+  color: #4ade80;
+
+  font-size: 13px;
+}
+
+.password-error {
+  margin-top: 12px;
+
+  padding: 10px 12px;
+
+  border-radius: 8px;
+
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+
+  color: #f87171;
+
+  font-size: 13px;
+}
+
+
+/* ================================
+   THEME OPTIONS
+================================ */
+
+.theme-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 14px;
+
+  margin-top: 20px;
+}
+
+.theme-option {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 16px;
+
+  border: 1px solid #1c3048;
+  border-radius: 14px;
+
+  background: #0b1728;
+
+  color: #fff;
+
+  cursor: pointer;
+
+  text-align: left;
+
+  transition: 0.2s ease;
+}
+
+.theme-option:hover {
+  border-color: #27c7ff;
+}
+
+.theme-option.active {
+  border-color: #27c7ff;
+  background: #10283d;
+}
+
+.theme-option-icon {
+  font-size: 20px;
+}
+
+.theme-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.theme-option-text strong {
+  font-size: 14px;
+}
+
+.theme-option-text small {
+  color: #71839a;
+}
+
+.theme-check {
+  margin-left: auto;
+
+  color: #27c7ff;
+
+  font-weight: 700;
+}
+
+
+/* ================================
+   NOTIFICATIONS
+================================ */
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+/* Toggle */
+
+.settings-toggle {
+  width: 48px;
+  height: 26px;
+
+  padding: 3px;
+
+  border: none;
+  border-radius: 20px;
+
+  background: #263b55;
+
+  cursor: pointer;
+}
+
+.settings-toggle span {
+  display: block;
+
+  width: 20px;
+  height: 20px;
+
+  border-radius: 50%;
+
+  background: #fff;
+
+  transition: 0.2s ease;
+}
+
+.settings-toggle.enabled {
+  background: #27b8ed;
+}
+
+.settings-toggle.enabled span {
+  transform: translateX(22px);
+}
+
+
+/* ================================
+   WORKSPACE
+================================ */
+
+.workspace-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-top: 18px;
+
+  padding: 14px 16px;
+
+  border-radius: 12px;
+
+  background: #0b1728;
+
+  color: #71839a;
+
+  font-size: 13px;
+}
+
+.workspace-info strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  color: #4ade80;
+}
+
+.workspace-info i {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #22c55e;
+}
+
+
+/* ================================
+   FOOTER
+================================ */
+
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 22px 34px;
+}
+
+.settings-footer span {
+  color: #53677f;
+
+  font-size: 12px;
+}
+
+.settings-done {
+  padding: 10px 22px;
+
+  border: 1px solid #263b55;
+  border-radius: 10px;
+
+  background: #0b1728;
+  color: #dce7f3;
+
+  cursor: pointer;
+
+  font-weight: 600;
+}
+
+.settings-done:hover {
+  border-color: #27c7ff;
+}
+
+
+/* ================================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 700px) {
+  .settings-overlay {
+    padding: 12px;
+  }
+
+  .settings-modal {
+    max-height: 94vh;
+    border-radius: 18px;
+  }
+
+  .settings-modal-header,
+  .settings-section {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .settings-footer {
+    padding: 18px 20px;
+  }
+
+  .theme-options {
+    grid-template-columns: 1fr;
+  }
 }
