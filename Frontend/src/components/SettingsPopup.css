@@ -1,6 +1,6 @@
-/* ================================
+/* ========================================
    SETTINGS OVERLAY
-================================ */
+======================================== */
 
 .settings-overlay {
   position: fixed;
@@ -16,15 +16,14 @@
   backdrop-filter: blur(8px);
 
   z-index: 9999;
-
   padding: 24px;
   box-sizing: border-box;
 }
 
 
-/* ================================
+/* ========================================
    SETTINGS MODAL
-================================ */
+======================================== */
 
 .settings-modal {
   position: relative;
@@ -62,9 +61,9 @@
 }
 
 
-/* ================================
+/* ========================================
    HEADER
-================================ */
+======================================== */
 
 .settings-modal-header {
   display: flex;
@@ -99,14 +98,13 @@
   margin: 8px 0 0;
 
   color: #71839a;
-
   font-size: 14px;
 }
 
 
-/* ================================
+/* ========================================
    CLOSE BUTTON
-================================ */
+======================================== */
 
 .settings-close {
   width: 42px;
@@ -126,19 +124,21 @@
   align-items: center;
   justify-content: center;
 
-  transition: 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .settings-close:hover {
-  color: #fff;
+  color: #ffffff;
   border-color: #27c7ff;
   background: #102238;
+
+  transform: translateY(-1px);
 }
 
 
-/* ================================
+/* ========================================
    SECTIONS
-================================ */
+======================================== */
 
 .settings-section {
   padding: 26px 34px;
@@ -183,9 +183,9 @@
 }
 
 
-/* ================================
+/* ========================================
    PROFILE
-================================ */
+======================================== */
 
 .settings-profile {
   display: flex;
@@ -193,7 +193,6 @@
   gap: 16px;
 
   margin-top: 20px;
-
   padding: 18px;
 
   border: 1px solid #1b3048;
@@ -235,29 +234,76 @@
 }
 
 
-/* ================================
+/* ========================================
    CHANGE PASSWORD
-================================ */
+======================================== */
+
+.change-password-button {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-top: 20px;
+  padding: 15px 18px;
+
+  border: 1px solid #1c3048;
+  border-radius: 12px;
+
+  background: #0b1728;
+  color: #dce7f3;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.change-password-button:hover {
+  border-color: #27c7ff;
+  background: #102238;
+  color: #ffffff;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 20px rgba(39, 199, 255, 0.08);
+}
+
+
+/* ========================================
+   PASSWORD FORM
+======================================== */
 
 .change-password-form {
-  margin-top: 22px;
+  margin-top: 20px;
 
-  padding: 20px;
+  padding: 22px;
 
   border: 1px solid #1b3048;
   border-radius: 16px;
 
   background: #0a1626;
+
+  box-shadow:
+    inset 0 0 30px rgba(39, 199, 255, 0.02);
 }
 
+
+/* Password fields */
+
 .password-field {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .password-field label {
   display: block;
 
-  margin-bottom: 8px;
+  margin-bottom: 9px;
 
   color: #aebdd0;
 
@@ -267,29 +313,36 @@
 
 .password-field input {
   width: 100%;
+  height: 52px;
 
   box-sizing: border-box;
 
-  padding: 13px 14px;
+  padding: 0 15px;
 
   border: 1px solid #263b55;
-  border-radius: 10px;
+  border-radius: 11px;
 
   background: #101f32;
-  color: #fff;
+  color: #ffffff;
 
+  font-family: inherit;
   font-size: 14px;
 
   outline: none;
 
-  transition: 0.2s ease;
+  transition: all 0.2s ease;
+}
+
+.password-field input:hover {
+  border-color: #36516f;
 }
 
 .password-field input:focus {
   border-color: #27c7ff;
 
   box-shadow:
-    0 0 0 3px rgba(39, 199, 255, 0.08);
+    0 0 0 3px rgba(39, 199, 255, 0.08),
+    0 0 18px rgba(39, 199, 255, 0.05);
 }
 
 .password-field input::placeholder {
@@ -297,80 +350,167 @@
 }
 
 
-/* Update Password button */
+/* ========================================
+   PASSWORD MESSAGES
+======================================== */
 
-.change-password-button {
-  width: 100%;
+.password-message {
+  margin-top: 12px;
 
-  margin-top: 6px;
+  padding: 11px 13px;
 
-  padding: 13px 18px;
+  border-radius: 9px;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.password-message.success {
+  background: rgba(34, 197, 94, 0.10);
+
+  border: 1px solid rgba(34, 197, 94, 0.30);
+
+  color: #4ade80;
+}
+
+.password-message.error {
+  background: rgba(239, 68, 68, 0.10);
+
+  border: 1px solid rgba(239, 68, 68, 0.30);
+
+  color: #f87171;
+}
+
+
+/* ========================================
+   PASSWORD ACTIONS
+======================================== */
+
+.password-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 12px;
+
+  margin-top: 24px;
+  padding-top: 20px;
+
+  border-top: 1px solid #17283d;
+}
+
+
+/* ========================================
+   CANCEL BUTTON
+======================================== */
+
+.password-cancel {
+  height: 46px;
+  min-width: 110px;
+
+  padding: 0 22px;
+
+  border: 1px solid #263b55;
+  border-radius: 11px;
+
+  background: #0b1728;
+  color: #aebdd0;
+
+  font-family: inherit;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.password-cancel:hover {
+  background: #102238;
+
+  border-color: #3a526d;
+
+  color: #ffffff;
+
+  transform: translateY(-1px);
+}
+
+.password-cancel:active {
+  transform: translateY(0);
+}
+
+
+/* ========================================
+   UPDATE PASSWORD BUTTON
+======================================== */
+
+.password-update {
+  height: 46px;
+  min-width: 175px;
+
+  padding: 0 24px;
 
   border: none;
-  border-radius: 10px;
+  border-radius: 11px;
 
-  background: #27b8ed;
-  color: #04101c;
+  background: linear-gradient(
+    135deg,
+    #2563eb 0%,
+    #27c7ff 100%
+  );
+
+  color: #ffffff;
+
+  font-family: inherit;
 
   font-size: 14px;
   font-weight: 700;
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  box-shadow:
+    0 8px 22px rgba(39, 199, 255, 0.16);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
 }
 
-.change-password-button:hover {
-  background: #45c9f5;
-  transform: translateY(-1px);
+.password-update:hover {
+  transform: translateY(-2px);
+
+  filter: brightness(1.08);
+
+  box-shadow:
+    0 12px 28px rgba(39, 199, 255, 0.25),
+    0 0 20px rgba(39, 199, 255, 0.12);
 }
 
-.change-password-button:disabled {
-  opacity: 0.6;
+.password-update:active {
+  transform: translateY(0);
+}
+
+.password-update:disabled,
+.password-cancel:disabled {
+  opacity: 0.55;
+
   cursor: not-allowed;
+
   transform: none;
+
+  box-shadow: none;
 }
 
 
-/* Success / error */
-
-.password-success {
-  margin-top: 12px;
-
-  padding: 10px 12px;
-
-  border-radius: 8px;
-
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-
-  color: #4ade80;
-
-  font-size: 13px;
-}
-
-.password-error {
-  margin-top: 12px;
-
-  padding: 10px 12px;
-
-  border-radius: 8px;
-
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-
-  color: #f87171;
-
-  font-size: 13px;
-}
-
-
-/* ================================
+/* ========================================
    THEME OPTIONS
-================================ */
+======================================== */
 
 .theme-options {
   display: grid;
+
   grid-template-columns: 1fr 1fr;
 
   gap: 14px;
@@ -383,6 +523,7 @@
 
   display: flex;
   align-items: center;
+
   gap: 12px;
 
   padding: 16px;
@@ -391,14 +532,13 @@
   border-radius: 14px;
 
   background: #0b1728;
-
-  color: #fff;
+  color: #ffffff;
 
   cursor: pointer;
 
   text-align: left;
 
-  transition: 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .theme-option:hover {
@@ -407,7 +547,11 @@
 
 .theme-option.active {
   border-color: #27c7ff;
+
   background: #10283d;
+
+  box-shadow:
+    0 0 15px rgba(39, 199, 255, 0.05);
 }
 
 .theme-option-icon {
@@ -417,6 +561,7 @@
 .theme-option-text {
   display: flex;
   flex-direction: column;
+
   gap: 4px;
 }
 
@@ -437,13 +582,15 @@
 }
 
 
-/* ================================
+/* ========================================
    NOTIFICATIONS
-================================ */
+======================================== */
 
 .settings-row {
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
 }
 
@@ -462,6 +609,8 @@
   background: #263b55;
 
   cursor: pointer;
+
+  transition: background 0.2s ease;
 }
 
 .settings-toggle span {
@@ -472,9 +621,9 @@
 
   border-radius: 50%;
 
-  background: #fff;
+  background: #ffffff;
 
-  transition: 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .settings-toggle.enabled {
@@ -486,17 +635,17 @@
 }
 
 
-/* ================================
+/* ========================================
    WORKSPACE
-================================ */
+======================================== */
 
 .workspace-info {
   display: flex;
+
   justify-content: space-between;
   align-items: center;
 
   margin-top: 18px;
-
   padding: 14px 16px;
 
   border-radius: 12px;
@@ -510,7 +659,9 @@
 
 .workspace-info strong {
   display: flex;
+
   align-items: center;
+
   gap: 7px;
 
   color: #4ade80;
@@ -526,13 +677,15 @@
 }
 
 
-/* ================================
+/* ========================================
    FOOTER
-================================ */
+======================================== */
 
 .settings-footer {
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
 
   padding: 22px 34px;
@@ -553,27 +706,37 @@
   background: #0b1728;
   color: #dce7f3;
 
+  font-family: inherit;
+
   cursor: pointer;
 
   font-weight: 600;
+
+  transition: all 0.2s ease;
 }
 
 .settings-done:hover {
   border-color: #27c7ff;
+
+  background: #102238;
+
+  color: #ffffff;
 }
 
 
-/* ================================
+/* ========================================
    RESPONSIVE
-================================ */
+======================================== */
 
 @media (max-width: 700px) {
+
   .settings-overlay {
     padding: 12px;
   }
 
   .settings-modal {
     max-height: 94vh;
+
     border-radius: 18px;
   }
 
@@ -589,5 +752,16 @@
 
   .theme-options {
     grid-template-columns: 1fr;
+  }
+
+  .password-actions {
+    flex-direction: column-reverse;
+
+    align-items: stretch;
+  }
+
+  .password-cancel,
+  .password-update {
+    width: 100%;
   }
 }
